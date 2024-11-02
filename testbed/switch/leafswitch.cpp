@@ -12,6 +12,11 @@
 
 using namespace conga;
 
+LeafSwitch::LeafSwitch() {
+    // do nothing;
+}
+
+
 void LeafSwitch::generateCongaRoute(route_t *&fwd, route_t *&rev, TCPFlow &flow) {
     const int TOTAL_SERVERS = N_LEAF * N_SERVER;
     uint32_t src = flow.src_ip;

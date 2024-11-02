@@ -11,8 +11,6 @@
 namespace conga {
 
 // Forward declarations of external network configuration
-
-
     extern Pipe *pCoreLeaf[N_CORE][N_LEAF];
     extern Queue *qCoreLeaf[N_CORE][N_LEAF];
     extern Pipe *pLeafCore[N_CORE][N_LEAF];

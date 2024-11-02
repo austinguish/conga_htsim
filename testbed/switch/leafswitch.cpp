@@ -7,60 +7,79 @@
 #include <vector>
 #include "queue.h"
 #include "eventlist.h"
-#include "leafswitch.h"
-#include <aprx-fairqueue.h>
-#include <fairqueue.h>
 #include <priorityqueue.h>
-#include <stoc-fairqueue.h>
-#include "eventlist.h"
-#include "logfile.h"
 #include "loggers.h"
-#include "queue.h"
-#include "pipe.h"
-#include "leafswitch.h"
-#include <vector>
 
-LeafSwitch::LeafSwitch(uint32_t id, uint32_t numUplinks) : leafId(id) {
-    uplinks.reserve(numUplinks);
-    dre_alpha = 0.5;
-    dre_Ct = 1;
-    dre_T = 5;
-    flowlet_Tfl = 1;
+using namespace conga;
+
+void LeafSwitch::generateCongaRoute(route_t *&fwd, route_t *&rev, TCPFlow &flow) {
+    const int TOTAL_SERVERS = N_LEAF * N_SERVER;
+    uint32_t src = flow.src_ip;
+    uint32_t dst = flow.dst_ip;
+    // Generate random source and destination if not specified
+    // use the gen object to generate random numbers
+
+    if (src == 0) src = rand() % TOTAL_SERVERS;
+    if (dst == 0) dst = rand() % (TOTAL_SERVERS - 1);
+    if (dst >= src) dst++;
+    flow.src_ip = src;
+    flow.dst_ip = dst;
+
+    // Calculate source and destination leaf switches
+    uint32_t src_leaf = src / N_SERVER;
+    uint32_t dst_leaf = dst / N_SERVER;
+    uint32_t src_server = src % N_SERVER;
+    uint32_t dst_server = dst % N_SERVER;
+
+    uint32_t core_switch = selectUplink(dst_leaf);
+    printf("select core switch %d\n", core_switch);
+
+    fwd = new route_t();
+    rev = new route_t();
+
+    fwd->push_back(qServerLeaf[src_leaf][src_server]);
+    fwd->push_back(pServerLeaf[src_leaf][src_server]);
+
+    if (src_leaf != dst_leaf) {
+        fwd->push_back(qLeafCore[core_switch][src_leaf]);
+        fwd->push_back(pLeafCore[core_switch][src_leaf]);
+        fwd->push_back(qCoreLeaf[core_switch][dst_leaf]);
+        fwd->push_back(pCoreLeaf[core_switch][dst_leaf]);
+    }
+
+    fwd->push_back(qLeafServer[dst_leaf][dst_server]);
+    fwd->push_back(pLeafServer[dst_leaf][dst_server]);
+
+    rev->push_back(qServerLeaf[dst_leaf][dst_server]);
+    rev->push_back(pServerLeaf[dst_leaf][dst_server]);
+
+    if (src_leaf != dst_leaf) {
+        rev->push_back(qLeafCore[core_switch][dst_leaf]);
+        rev->push_back(pLeafCore[core_switch][dst_leaf]);
+        rev->push_back(qCoreLeaf[core_switch][src_leaf]);
+        rev->push_back(pCoreLeaf[core_switch][src_leaf]);
+    }
+
+    rev->push_back(qLeafServer[src_leaf][src_server]);
+    rev->push_back(pLeafServer[src_leaf][src_server]);
 }
 
-Queue *LeafSwitch::selectUplink(uint32_t dstLeafId) {
-    Queue *bestUplink = nullptr;
+
+uint32_t LeafSwitch::selectUplink(uint32_t dstLeafId) {
+    uint32_t bestCorePath = 0;
     double minCongestion = std::numeric_limits<double>::max();
 
-    cleanupStaleEntries(EventList::Get().now());
+    // cleanupStaleEntries(EventList::Get().now());
 
-    for (auto &uplink: uplinks) {
-        double pathCongestion = getPathCongestion(dstLeafId, uplink.queue);
+    for (int core_id = 0; core_id < N_CORE; core_id++) {
+        double pathCongestion = getPathCongestion(dstLeafId, core_id);
         if (pathCongestion < minCongestion) {
             minCongestion = pathCongestion;
-            bestUplink = uplink.queue;
+            bestCorePath = core_id;
         }
     }
 
-    return bestUplink;
-}
-
-void LeafSwitch::updateCongestionFromLeaf(uint32_t leafId, double congestionMetric) {
-    CongestionInfo info;
-    info.leafId = leafId;
-    info.congestionMetric = congestionMetric;
-    info.timestamp = EventList::Get().now();
-
-    congestionFromLeafTable[leafId] = info;
-}
-
-void LeafSwitch::updateCongestionToLeaf(uint32_t leafId, double congestionMetric) {
-    CongestionInfo info;
-    info.leafId = leafId;
-    info.congestionMetric = congestionMetric;
-    info.timestamp = EventList::Get().now();
-
-    congestionToLeafTable[leafId] = info;
+    return bestCorePath;
 }
 
 double LeafSwitch::calculateDRE(Queue *queue) {
@@ -68,128 +87,47 @@ double LeafSwitch::calculateDRE(Queue *queue) {
     return 1.0;
 }
 
-void LeafSwitch::addUplink(Queue *queue, uint32_t remoteLeafId) {
-    UplinkInfo info;
-    info.queue = queue;
-    info.remoteLeafId = remoteLeafId;
-    info.currentCongestion = 0.0;
-    uplinks.push_back(info);
-}
+// void LeafSwitch::cleanupStaleEntries(time_t currentTime) {
+//     const time_t ENTRY_TIMEOUT = timeFromMs(100); // 100ms timeout
+//
+//     auto shouldRemove = [currentTime, ENTRY_TIMEOUT](const CongestionInfo &info) {
+//         return (currentTime - info.timestamp) > ENTRY_TIMEOUT;
+//     };
+//
+//     // Clean up stale entries from both tables
+//     for (auto it = congestionToLeafTable.begin(); it != congestionToLeafTable.end();) {
+//         if (shouldRemove(it->second)) {
+//             it = congestionToLeafTable.erase(it);
+//         } else {
+//             ++it;
+//         }
+//     }
+//
+//     for (auto it = congestionFromLeafTable.begin(); it != congestionFromLeafTable.end();) {
+//         if (shouldRemove(it->second)) {
+//             it = congestionFromLeafTable.erase(it);
+//         } else {
+//             ++it;
+//         }
+//     }
+// }
 
-void LeafSwitch::cleanupStaleEntries(time_t currentTime) {
-    const time_t ENTRY_TIMEOUT = timeFromMs(100); // 100ms timeout
-
-    auto shouldRemove = [currentTime, ENTRY_TIMEOUT](const CongestionInfo &info) {
-        return (currentTime - info.timestamp) > ENTRY_TIMEOUT;
-    };
-
-    // Clean up stale entries from both tables
-    for (auto it = congestionToLeafTable.begin(); it != congestionToLeafTable.end();) {
-        if (shouldRemove(it->second)) {
-            it = congestionToLeafTable.erase(it);
-        } else {
-            ++it;
-        }
-    }
-
-    for (auto it = congestionFromLeafTable.begin(); it != congestionFromLeafTable.end();) {
-        if (shouldRemove(it->second)) {
-            it = congestionFromLeafTable.erase(it);
-        } else {
-            ++it;
-        }
-    }
-}
-
-double LeafSwitch::getPathCongestion(uint32_t dstLeafId, Queue *uplink) {
+double LeafSwitch::getPathCongestion(uint32_t dstLeafId, uint32_t coreId) {
     // Find local congestion
-    double localCongestion = calculateDRE(uplink);
+    // TODO calculate local congestion by dre
+    double localCongestion = 1;
 
     // Find remote congestion from table
-    auto it = congestionToLeafTable.find(dstLeafId);
-    double remoteCongestion = (it != congestionToLeafTable.end()) ?
-                              it->second.congestionMetric : 0.0;
+    double remoteCongestion = 0.0;  // Default if no entry in the table
+    auto leafEntry = congestionToLeafTable.find(dstLeafId);
+
+    if (leafEntry != congestionToLeafTable.end()) {
+        auto queueEntry = leafEntry->second.find(coreId);
+        if (queueEntry != leafEntry->second.end()) {
+            remoteCongestion = queueEntry->second;
+        }
+    }
 
     // Return maximum of local and remote congestion
     return std::max(localCongestion, remoteCongestion);
 }
-
-uint32_t getSpineIdFromQueue(Queue *queue) {
-    return 0;
-}
-
-
-//void conga_simulation(const ArgList &args, Logfile &logfile) {
-//    // Basic simulation parameters
-//    uint32_t Duration = 10;
-//    uint64_t LinkSpeed = 10000000000; // 10Gbps
-//    uint64_t LinkDelay = 25;          // 25 microseconds
-//    uint64_t LinkBuffer = 512000;     // Buffer size
-//
-//    // Parse command line arguments
-//    parseInt(args, "duration", Duration);
-//    parseLongInt(args, "linkspeed", LinkSpeed);
-//    parseLongInt(args, "linkdelay", LinkDelay);
-//    parseLongInt(args, "linkbuffer", LinkBuffer);
-//
-//    // Create loggers
-//    QueueLoggerSampling *qs = new QueueLoggerSampling(timeFromUs(10));
-//    logfile.addLogger(*qs);
-//
-//    // Create leaf switches
-//    std::vector<LeafSwitch *> leafSwitches;
-//    const uint32_t NUM_LEAVES = 4;
-//    const uint32_t UPLINKS_PER_LEAF = 2;
-//
-//    for (uint32_t i = 0; i < NUM_LEAVES; i++) {
-//        LeafSwitch *leaf = new LeafSwitch(i, UPLINKS_PER_LEAF);
-//        leafSwitches.push_back(leaf);
-//    }
-//
-//    // Create and connect queues and pipes
-//    for (uint32_t i = 0; i < NUM_LEAVES; i++) {
-//        for (uint32_t j = 0; j < UPLINKS_PER_LEAF; j++) {
-//            Queue *uplink = new Queue(LinkSpeed, LinkBuffer, qs);
-//            uplink->setName("leaf" + std::to_string(i) + "_uplink" + std::to_string(j));
-//            logfile.writeName(*uplink);
-//
-//            Pipe *pipe = new Pipe(timeFromUs(LinkDelay));
-//            pipe->setName("leaf" + std::to_string(i) + "_pipe" + std::to_string(j));
-//            logfile.writeName(*pipe);
-//
-//            // Connect leaf switch to uplink
-//            leafSwitches[i]->addUplink(uplink, (i + j + 1) % NUM_LEAVES);
-//        }
-//    }
-//
-//    // Set simulation end time
-//    EventList::Get().setEndtime(timeFromSec(Duration));
-//}
-//
-// void createQueues(std::string &qType,
-//                       Queue *&queue,
-//                       uint64_t speed,
-//                       uint64_t buffer,
-//                       Logfile &logfile)
-// {
-// #if MING_PROF
-//     QueueLoggerSampling *qs = new QueueLoggerSampling(timeFromUs(100));
-//     //QueueLoggerSampling *qs = new QueueLoggerSampling(timeFromUs(10));
-//     //QueueLoggerSampling *qs = new QueueLoggerSampling(timeFromUs(50));
-// #else
-//     QueueLoggerSampling *qs = new QueueLoggerSampling(timeFromMs(10));
-// #endif
-//     logfile.addLogger(*qs);
-//
-//     if (qType == "fq") {
-//         queue = new FairQueue(speed, buffer, qs);
-//     } else if (qType == "afq") {
-//         queue = new AprxFairQueue(speed, buffer, qs);
-//     } else if (qType == "pq") {
-//         queue = new PriorityQueue(speed, buffer, qs);
-//     } else if (qType == "sfq") {
-//         queue = new StocFairQueue(speed, buffer, qs);
-//     } else {
-//         queue = new Queue(speed, buffer, qs);
-//     }
-// }

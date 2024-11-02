@@ -12,7 +12,7 @@
 #include<string>
 #include<functional>
 #include"switch/ecmp_switch.h"
-
+#include "switch/leafswitch.h"
 
 
 namespace conga {
@@ -31,8 +31,15 @@ namespace conga {
 
     // Helper functions
     ECMPSwitch ecmpSwitch;
+    LeafSwitch congaSwitch;
 
     // Modified route generation function that uses ECMP switch
+    void generateCongaRoute(route_t *&fwd, route_t *&rev, uint32_t &src, uint32_t &dst) {
+        TCPFlow flow;
+        flow.src_ip = src;
+        flow.dst_ip = dst;
+        congaSwitch.generateCongaRoute(fwd, rev, flow);
+    }
     void generateECMPRoute(route_t *&fwd, route_t *&rev, uint32_t &src, uint32_t &dst) {
         // Create a TCPFlow object with the source and destination IPs
         TCPFlow flow;
@@ -143,6 +150,8 @@ conga_testbed(const ArgList &args, Logfile &logfile)
         bgFlowGen = new FlowGenerator(eh, generateRandomRoute, bg_flow_rate, AvgFlowSize, fd);
     }else if (FlowGen=="ecmp"){
         bgFlowGen = new FlowGenerator(eh, generateECMPRoute, bg_flow_rate, AvgFlowSize, fd);
+    } else if (FlowGen=="conga") {
+        bgFlowGen = new FlowGenerator(eh, generateCongaRoute, bg_flow_rate, AvgFlowSize, fd);
     }
 
     bgFlowGen->setTimeLimits(timeFromUs(1), timeFromSec(3) - 1);

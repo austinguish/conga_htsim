@@ -6,28 +6,25 @@
 
 using namespace std;
 
-Queue::Queue(linkspeed_bps bitrate, 
-             mem_b maxsize, 
-             QueueLogger* logger)
-             : EventSource("queue"), 
-             _maxsize(maxsize), 
-             _queuesize(0),
-             _bitrate(bitrate), 
-             _logger(logger)
-{
-    _ps_per_byte = (simtime_picosec)(8 * 1000000000000UL / _bitrate);
+Queue::Queue(linkspeed_bps bitrate,
+             mem_b maxsize,
+             QueueLogger *logger)
+    : EventSource("queue"),
+      _maxsize(maxsize),
+      _queuesize(0),
+      _bitrate(bitrate),
+      _logger(logger) {
+    _ps_per_byte = (simtime_picosec) (8 * 1000000000000UL / _bitrate);
 }
 
 void
-Queue::beginService()
-{
+Queue::beginService() {
     assert(!_enqueued.empty());
     EventList::Get().sourceIsPendingRel(*this, drainTime(_enqueued.back()));
 }
 
 void
-Queue::completeService()
-{
+Queue::completeService() {
     assert(!_enqueued.empty());
 
     Packet *pkt = _enqueued.back();
@@ -49,14 +46,20 @@ Queue::completeService()
 }
 
 void
-Queue::doNextEvent()
-{
+Queue::doNextEvent() {
     completeService();
 }
 
 void
-Queue::receivePacket(Packet &pkt)
-{
+Queue::receivePacket(Packet &pkt) {
+    cout << "[DEBUG-QUEUE] Queue " << str()
+            << " received packet, flow_id: " << pkt.flow().id
+            << " isCoreQueue: " << isCoreQueue
+            << " isDstLeafQueue: " << isDstLeafQueue
+            << " leaf_id: " << leaf_id
+            << " core_id: " << core_id
+            << endl;
+
     // First check if this is an ACK at a leaf queue that needs congestion feedback
     if (isDstLeafQueue) {
         DataAck* ack = dynamic_cast<DataAck*>(&pkt);
@@ -64,18 +67,22 @@ Queue::receivePacket(Packet &pkt)
             double queueUtilization = static_cast<double>(_queuesize) /
                                     static_cast<double>(_maxsize);
 
-            cout << "[Queue::receivePacket] Queue " << str() << " setting feedback - leaf_id: " << leaf_id
-                 << " core_id: " << core_id
-                 << " isLeafQueue: " << isDstLeafQueue
-                 << " utilization: " << queueUtilization << endl;
-
-            // Use the core_id that was tracked in the packet
             ack->setCongaFeedback(leaf_id, core_id, queueUtilization);
+
+            cout << "[DEBUG-QUEUE] Set feedback - "
+                    << "leaf_id: " << leaf_id
+                    << " core_id: " << core_id
+                    << " util: " << queueUtilization
+                    << endl;
         }
     }
 
     // Continue with original queue logic
     if (_queuesize + pkt.size() > _maxsize) {
+        cout << "[DEBUG-QUEUE] Queue " << str()
+                << " dropped packet due to overflow"
+                << endl;
+
         if (_logger) {
             _logger->logQueue(*this, QueueLogger::PKT_DROP, pkt);
         }
@@ -101,19 +108,17 @@ Queue::receivePacket(Packet &pkt)
 }
 
 void
-Queue::applyEcnMark(Packet &pkt)
-{
+Queue::applyEcnMark(Packet &pkt) {
     if (ENABLE_ECN && _queuesize > dctcpThreshold()) {
         pkt.setFlag(Packet::ECN_FWD);
     }
 }
 
 void
-Queue::printStats()
-{
+Queue::printStats() {
     unordered_map<uint32_t, uint32_t> counts;
 
-    for (auto const& i : _enqueued) {
+    for (auto const &i: _enqueued) {
         uint32_t fid = i->flow().id;
         if (counts.find(fid) == counts.end()) {
             counts[fid] = 0;

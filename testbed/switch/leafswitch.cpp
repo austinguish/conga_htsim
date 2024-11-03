@@ -68,13 +68,13 @@ void LeafSwitch::generateCongaRoute(route_t *&fwd, route_t *&rev, TCPFlow &flow)
         fwd->push_back(qCoreLeaf[core_switch][dst_leaf]);
     }
 
-    // Leaf->Server at destination: not core queue, is dst
-    qLeafServer[dst_leaf][dst_server]->setLeafInfo(dst_leaf, core_switch, false, true);
+    // Leaf->Server at destination: not core queue, not dst
+    qLeafServer[dst_leaf][dst_server]->setLeafInfo(dst_leaf, core_switch, false, false);
     fwd->push_back(qLeafServer[dst_leaf][dst_server]);
 
     // Reverse path (ACK packets)
-    // Server->Leaf at destination: not core queue, not dst
-    qServerLeaf[dst_leaf][dst_server]->setLeafInfo(dst_leaf, core_switch, false, false);
+    // Server->Leaf at destination: not core queue, is dst
+    qServerLeaf[dst_leaf][dst_server]->setLeafInfo(dst_leaf, core_switch, false, true);
     rev->push_back(qServerLeaf[dst_leaf][dst_server]);
 
     if (src_leaf != dst_leaf) {
@@ -90,6 +90,30 @@ void LeafSwitch::generateCongaRoute(route_t *&fwd, route_t *&rev, TCPFlow &flow)
     // Leaf->Server at source: not core queue, not dst
     qLeafServer[src_leaf][src_server]->setLeafInfo(src_leaf, core_switch, false, false);
     rev->push_back(qLeafServer[src_leaf][src_server]);
+
+    for (auto q : *fwd) {
+        Queue* queue = dynamic_cast<Queue*>(q);
+        if (queue) {
+            std::cout << "[DEBUG-ROUTE] Forward path queue: " << queue->str()
+                 << " leaf_id: " << queue->leaf_id
+                 << " core_id: " << queue->core_id
+                 << " isCoreQueue: " << queue->isCoreQueue
+                 << " isDstLeafQueue: " << queue->isDstLeafQueue
+                 << std::endl;
+        }
+    }
+
+    for (auto q : *rev) {
+        Queue* queue = dynamic_cast<Queue*>(q);
+        if (queue) {
+            std::cout << "[DEBUG-ROUTE] Reverse path queue: " << queue->str()
+                 << " leaf_id: " << queue->leaf_id
+                 << " core_id: " << queue->core_id
+                 << " isCoreQueue: " << queue->isCoreQueue
+                 << " isDstLeafQueue: " << queue->isDstLeafQueue
+                 << std::endl;
+        }
+    }
 }
 
 

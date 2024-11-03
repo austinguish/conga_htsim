@@ -473,6 +473,12 @@ TcpSink::receivePacket(Packet &pkt)
 {
     DataPacket *p = (DataPacket*)(&pkt);
     simtime_picosec ts = p->ts();
+
+    cout << "[DEBUG-SINK] Received data packet at sink, "
+         << "flow_id: " << p->flow().id
+         << " node_id: " << _node_id
+         << endl;
+
     processDataPacket(*p);
 
     if (p->getFlag(Packet::DEADLINE)) {
@@ -490,6 +496,14 @@ TcpSink::receivePacket(Packet &pkt)
     p->free();
 
     DataAck *ack = DataAck::newpkt(_src->_flow, *_route, 1, _cumulative_ack);
+    //
+    // ack->setFlag(Packet::ACK);
+
+    cout << "[DEBUG-SINK] Generated ACK at sink, "
+             << "flow_id: " << ack->flow().id
+             << " route size: " << _route->size()
+             << endl;
+
     ack->flow().logTraffic(*ack, *this, TrafficLogger::PKT_CREATESEND);
     ack->set_ts(ts);
     if (p->getFlag(Packet::ECN_FWD)) {

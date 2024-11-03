@@ -148,7 +148,8 @@ conga_testbed(const ArgList &args, Logfile &logfile)
     }
 
     // Calculate background traffic rate
-    double bg_flow_rate = Utilization * (CORE_SPEED * N_CORE * N_LEAF);
+    //TODO edit back to normal bg_flow_rate
+    double bg_flow_rate = Utilization * (CORE_SPEED * N_CORE * N_LEAF) *0.00001;
     FlowGenerator *bgFlowGen = nullptr;
     // Create flow generator
     if (FlowGen=="random"){

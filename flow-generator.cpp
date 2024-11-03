@@ -9,7 +9,8 @@ FlowGenerator::FlowGenerator(DataSource::EndHost endhost,
                              route_gen_t rg,
                              linkspeed_bps flowRate, 
                              uint32_t avgFlowSize, 
-                             Workloads::FlowDist flowSizeDist)
+                             Workloads::FlowDist flowSizeDist,
+                             conga::LeafSwitch* congaSwitch)
     : EventSource("FlowGen"),
     _prefix(""),
     _endhost(endhost),
@@ -173,6 +174,9 @@ FlowGenerator::createFlow(uint64_t flowSize,
                      // TODO: option to supply logtcp.
                      src = new TcpSrc(NULL, NULL, flowSize);
                      snk = new TcpSink();
+
+                     uint32_t src_leaf = src_node / N_SERVER;
+                     src->setLeafSwitch(_congaSwitch);
 
                      if (_endhost == DataSource::DCTCP || _endhost == DataSource::D_DCTCP) {
                          TcpSrc::_enable_dctcp = true;

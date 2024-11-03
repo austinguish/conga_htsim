@@ -47,6 +47,10 @@ class FlowGenerator : public EventSource
         void finishFlow(uint32_t flow_id);
         void dumpLiveFlows();
 
+        void setCongaSwitch(conga::LeafSwitch* sw) {
+            _congaSwitch = sw;
+        }
+
     private:
         // Creates a flow in the simulation.
         void createFlow(uint64_t flowSize, simtime_picosec startTime);
@@ -86,6 +90,9 @@ class FlowGenerator : public EventSource
 
         // Custom flow size distribution.
         std::map<double,uint64_t> _flowSizeCDF;
+
+        // add conga switch
+        conga::LeafSwitch* _congaSwitch;
 };
 
 #endif /* FLOW_GENERATOR_H */

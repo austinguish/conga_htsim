@@ -4,6 +4,7 @@
 #include "tcp.h"
 #include "flow-generator.h"
 #include "prof.h"
+#include <testbed/switch/leafswitch.h>
 
 #define TRACE_FLOW 0 && "tcp0"
 
@@ -137,6 +138,10 @@ TcpSrc::receivePacket(Packet &pkt)
     DataAck *p = (DataAck*)(&pkt);
     DataAck::seq_t seqno = p->ackno();
     simtime_picosec ts = p->ts();
+
+    if (p->hasCongaFeedback() && _myLeafSwitch) {
+        _myLeafSwitch->processCongestionFeedback(*p);
+    }
 
     pkt.flow().logTraffic(pkt, *this, TrafficLogger::PKT_RCVDESTROY);
     p->free();

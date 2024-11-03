@@ -56,30 +56,7 @@ public:
     }
 
     // Override receivePacket to handle congestion feedback
-    void receivePacket(Packet& pkt) override {
-        // If this is a leaf queue and packet is DataAck
-        DataAck* ack = dynamic_cast<DataAck*>(&pkt);
-        if (isLeafQueue && ack != nullptr) {
-            // Calculate local congestion
-            double queueUtilization = static_cast<double>(_queuesize) /
-                                    static_cast<double>(_maxsize);
-
-            // Add feedback to ACK packet
-            ack->setCongaFeedback(leaf_id, core_id, queueUtilization);
-        }
-
-        // Continue with normal queue processing
-        if (_queuesize + pkt.size() <= _maxsize) {
-            _queuesize += pkt.size();
-            _enqueued.push_back(&pkt);
-
-            if (_enqueued.size() == 1) {
-                beginService();
-            }
-        } else {
-            pkt.free();
-        }
-    }
+    virtual void receivePacket(Packet& pkt);
 
 protected:
     // Start serving the item at the head of the queue.

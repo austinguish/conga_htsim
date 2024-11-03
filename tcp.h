@@ -6,6 +6,7 @@
 
 #include "eventlist.h"
 #include "datasource.h"
+// #include "testbed/switch/leafswitch.h"
 
 #define DCTCP_GAIN 0.0625
 
@@ -55,6 +56,8 @@ class TcpSrc : public DataSource
 
     static std::map<uint64_t, uint64_t> slacks;
     static uint64_t totalPkts;
+    //
+    // void setLeafSwitch(conga::LeafSwitch* leaf) { _myLeafSwitch = leaf; }
 
     private:
     // Mechanism
@@ -64,6 +67,9 @@ class TcpSrc : public DataSource
 
     // Housekeeping
     TcpLogger *_logger;
+    //
+    // // conga switch
+    // conga::LeafSwitch* _myLeafSwitch;
 };
 
 class TcpSink : public DataSink

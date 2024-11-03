@@ -123,6 +123,11 @@ conga_testbed(const ArgList &args, Logfile &logfile)
         }
     }
 
+    for (int i = 0; i < N_LEAF; i++) {
+        congaSwitch.leaf_id = i;
+        congaSwitch.initializeQueues();
+    }
+
     // Setup flow generation
     // todo change the data Source and the workloads
     DataSource::EndHost eh = DataSource::TCP;
@@ -152,6 +157,7 @@ conga_testbed(const ArgList &args, Logfile &logfile)
         bgFlowGen = new FlowGenerator(eh, generateECMPRoute, bg_flow_rate, AvgFlowSize, fd);
     } else if (FlowGen=="conga") {
         bgFlowGen = new FlowGenerator(eh, generateCongaRoute, bg_flow_rate, AvgFlowSize, fd);
+        bgFlowGen->setCongaSwitch(&congaSwitch);
     }
 
     bgFlowGen->setTimeLimits(timeFromUs(1), timeFromSec(3) - 1);

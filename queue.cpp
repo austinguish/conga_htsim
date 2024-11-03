@@ -55,8 +55,22 @@ Queue::doNextEvent()
 }
 
 void
-Queue::receivePacket(Packet &pkt) 
+Queue::receivePacket(Packet &pkt)
 {
+    // First check if this is an ACK at a leaf queue that needs congestion feedback
+    if (isLeafQueue) {
+        DataAck* ack = dynamic_cast<DataAck*>(&pkt);
+        if (ack != nullptr) {
+            // Calculate local congestion
+            double queueUtilization = static_cast<double>(_queuesize) /
+                                    static_cast<double>(_maxsize);
+
+            // Add feedback to ACK packet
+            ack->setCongaFeedback(leaf_id, core_id, queueUtilization);
+        }
+    }
+
+    // Continue with original queue logic
     if (_queuesize + pkt.size() > _maxsize) {
         if (_logger) {
             _logger->logQueue(*this, QueueLogger::PKT_DROP, pkt);

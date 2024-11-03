@@ -8,6 +8,7 @@
 #include "loggertypes.h"
 #include "datapacket.h"
 #include "datasink.h"
+#include "testbed/switch/leafswitch.h"
 
 #include <list>
 
@@ -57,6 +58,9 @@ class DataSource : public EventSource, public PacketSink
         PacketFlow _flow;
 
         uint32_t _node_id;
+
+        conga::LeafSwitch* _myLeafSwitch;
+        void setLeafSwitch(conga::LeafSwitch* leaf) { _myLeafSwitch = leaf; }
 };
 
 #endif /* DATASOURCE_H */

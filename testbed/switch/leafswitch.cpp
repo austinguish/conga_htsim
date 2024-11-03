@@ -33,8 +33,6 @@ void LeafSwitch::generateCongaRoute(route_t *&fwd, route_t *&rev, TCPFlow &flow)
     const int TOTAL_SERVERS = N_LEAF * N_SERVER;
     uint32_t src = flow.src_ip;
     uint32_t dst = flow.dst_ip;
-    // Generate random source and destination if not specified
-    // use the gen object to generate random numbers
 
     if (src == 0) src = rand() % TOTAL_SERVERS;
     if (dst == 0) dst = rand() % (TOTAL_SERVERS - 1);

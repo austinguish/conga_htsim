@@ -74,10 +74,12 @@ uint32_t LeafSwitch::selectUplink(uint32_t dstLeafId) {
     uint32_t bestCorePath = 0;
     double minCongestion = std::numeric_limits<double>::max();
 
-    // cleanupStaleEntries(EventList::Get().now());
-
     for (int core_id = 0; core_id < N_CORE; core_id++) {
-        double pathCongestion = getPathCongestion(dstLeafId, core_id);
+        double localDRE = calculateDRE(core_id);
+        std::cout << "calculated DRE:" << localDRE << '\n';
+        double remoteCongestion = getPathCongestion(dstLeafId, core_id);
+        double pathCongestion = std::max(localDRE, remoteCongestion);
+
         if (pathCongestion < minCongestion) {
             minCongestion = pathCongestion;
             bestCorePath = core_id;
@@ -87,9 +89,36 @@ uint32_t LeafSwitch::selectUplink(uint32_t dstLeafId) {
     return bestCorePath;
 }
 
-double LeafSwitch::calculateDRE(Queue *queue) {
-    // Simplified DRE calculation based on queue occupancy
-    return 1.0;
+double LeafSwitch::calculateDRE(uint32_t core_id) {
+    Queue* uplinkQueue = qLeafCore[core_id][this->leaf_id];
+    auto now = EventList::Get().now();
+
+    // Initialize metrics if not exists
+    if (uplinkMetrics.find(core_id) == uplinkMetrics.end()) {
+        uplinkMetrics.insert({core_id, QueueMetrics(now, 0.0)});
+        return 0.0;
+    }
+
+    auto& metrics = uplinkMetrics[core_id];
+
+    // Only update at intervals
+    if (now - metrics.lastUpdateTime < UPDATE_INTERVAL) {
+        return metrics.currentDRE;
+    }
+
+    // Calculate queue utilization using available queue info
+    double queueUtilization = static_cast<double>(uplinkQueue->_queuesize) /
+                            static_cast<double>(uplinkQueue->_maxsize);
+
+    // Calculate new DRE using EWMA
+    double newDRE = (metrics.ALPHA * queueUtilization) +
+                   ((1 - metrics.ALPHA) * metrics.currentDRE);
+
+    // Update metrics
+    metrics.lastUpdateTime = now;
+    metrics.currentDRE = newDRE;
+
+    return newDRE;
 }
 
 // void LeafSwitch::cleanupStaleEntries(time_t currentTime) {
@@ -118,10 +147,6 @@ double LeafSwitch::calculateDRE(Queue *queue) {
 // }
 
 double LeafSwitch::getPathCongestion(uint32_t dstLeafId, uint32_t coreId) {
-    // Find local congestion
-    // TODO calculate local congestion by dre
-    double localCongestion = 1;
-
     // Find remote congestion from table
     double remoteCongestion = 0.0;  // Default if no entry in the table
     auto leafEntry = congestionToLeafTable.find(dstLeafId);
@@ -134,5 +159,5 @@ double LeafSwitch::getPathCongestion(uint32_t dstLeafId, uint32_t coreId) {
     }
 
     // Return maximum of local and remote congestion
-    return std::max(localCongestion, remoteCongestion);
+    return remoteCongestion;
 }

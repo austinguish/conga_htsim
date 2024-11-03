@@ -41,12 +41,6 @@ namespace conga {
     public:
         LeafSwitch();
 
-        // Setters
-        void setDREAlpha(float alpha) { dre_alpha = alpha; }
-        void setDRET(float T) { dre_T = T; }
-        void setDRECt(float Ct) { dre_Ct = Ct; }
-        void setFlowletTfl(float Tfl) { flowlet_Tfl = Tfl; }
-
         // LeafSwitch(uint32_t id, uint32_t numUplinks);
 
         // Path selection
@@ -58,7 +52,7 @@ namespace conga {
         void updateCongestionToLeaf(uint32_t leafId, double congestionMetric);
 
         // DRE (Direct Response to ECN) implementation
-        double calculateDRE(Queue* queue);
+        double calculateDRE(uint32_t core_id);
 
         // Uplink management
         // void addUplink(Queue* queue, uint32_t remoteLeafId);
@@ -71,15 +65,12 @@ namespace conga {
         uint32_t getSpineIdFromQueue(Queue * queue);
 
     private:
-        uint32_t leafId;
+        uint32_t leaf_id;
         std::vector<UplinkInfo> uplinks;
         // <dst leaf_id, <core_id, congestionMetric>>
         std::map<uint32_t, std::map<uint32_t, double>> congestionToLeafTable;
         std::map<uint32_t, std::map<uint32_t, double>> congestionFromLeafTable;
 
-        // dre config
-        float dre_alpha;
-        float dre_T; //decremented periodically by dre_alpha every dre_T seconds
         float dre_Ct; // the link speed
 
         // flowlet aging
@@ -88,6 +79,24 @@ namespace conga {
 
         // Helper methodd
         double getPathCongestion(uint32_t dstLeafId, uint32_t coreId);
+
+        struct QueueMetrics {
+            simtime_picosec lastUpdateTime;
+            double currentDRE;
+            static constexpr double ALPHA = 0.1;  // EWMA smoothing factor
+
+            // Add constructor for proper initialization
+            QueueMetrics(simtime_picosec time, double dre)
+                : lastUpdateTime(time), currentDRE(dre) {}
+
+            // Default constructor if needed
+            QueueMetrics() : lastUpdateTime(0), currentDRE(0.0) {}
+        };
+
+        // Store metrics for each uplink queue
+        std::map<uint32_t, QueueMetrics> uplinkMetrics;
+        static constexpr double ALPHA = 0.1;  // EWMA smoothing factor
+        static constexpr simtime_picosec UPDATE_INTERVAL = 50000000;
     };
 }
 

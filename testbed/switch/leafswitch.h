@@ -7,6 +7,7 @@
 #include "../eventlist.h"
 #include "../queue.h"
 #include "../pipe.h"
+#include "../datapacket.h"
 #include "tcp_flow.h"
 #include "constants.h"
 
@@ -39,12 +40,13 @@ namespace conga {
 
     class LeafSwitch {
     public:
+        uint32_t leaf_id;
+
         LeafSwitch();
 
-        // LeafSwitch(uint32_t id, uint32_t numUplinks);
+        void initializeQueues() const;
 
         // Path selection
-        void addUplink(Queue *queue, uint32_t coreId);
         uint32_t selectUplink(uint32_t dstLeafId);
 
         // Congestion monitoring
@@ -59,26 +61,13 @@ namespace conga {
 
         void generateCongaRoute(route_t*& fwd, route_t*& rev, TCPFlow& flow);
 
-        // Initilizer
-        void InitCongestion(uint32_t leafId, uint32_t port, uint32_t congestionMetric);
-
-        uint32_t getSpineIdFromQueue(Queue * queue);
+        void processCongestionFeedback(const DataAck& ack);
 
     private:
-        uint32_t leaf_id;
-        std::vector<UplinkInfo> uplinks;
-        // <dst leaf_id, <core_id, congestionMetric>>
-        std::map<uint32_t, std::map<uint32_t, double>> congestionToLeafTable;
-        std::map<uint32_t, std::map<uint32_t, double>> congestionFromLeafTable;
-
-        float dre_Ct; // the link speed
-
-        // flowlet aging
-        float flowlet_Tfl; // flowlet timer
-
-
-        // Helper methodd
-        double getPathCongestion(uint32_t dstLeafId, uint32_t coreId);
+        struct CongestionEntry {
+            double congestionMetric;
+            simtime_picosec timestamp;
+        };
 
         struct QueueMetrics {
             simtime_picosec lastUpdateTime;
@@ -92,6 +81,22 @@ namespace conga {
             // Default constructor if needed
             QueueMetrics() : lastUpdateTime(0), currentDRE(0.0) {}
         };
+
+
+
+        std::vector<UplinkInfo> uplinks;
+        std::map<uint32_t, std::map<uint32_t, CongestionEntry>> congestionToLeafTable; // <dst leaf_id, <core_id, CongestionEntry>>
+        static constexpr simtime_picosec CONGESTION_TIMEOUT = 500000000;
+
+        // flowlet aging
+        float flowlet_Tfl; // flowlet timer
+
+
+        // Helper methodd
+        double getPathCongestion(uint32_t dstLeafId, uint32_t coreId);
+        void cleanupStaleEntries(simtime_picosec now);
+
+
 
         // Store metrics for each uplink queue
         std::map<uint32_t, QueueMetrics> uplinkMetrics;

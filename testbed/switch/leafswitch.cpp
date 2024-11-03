@@ -16,6 +16,18 @@ LeafSwitch::LeafSwitch() {
     // do nothing;
 }
 
+void LeafSwitch::initializeQueues() const {
+    for (int c = 0; c < N_CORE; c++) {
+        qLeafCore[c][leaf_id]->setLeafInfo(leaf_id, c, true);
+        qCoreLeaf[c][leaf_id]->setLeafInfo(leaf_id, c, false);
+    }
+
+    for (int s = 0; s < N_SERVER; s++) {
+        qLeafServer[leaf_id][s]->setLeafInfo(leaf_id, 0, true);
+        qServerLeaf[leaf_id][s]->setLeafInfo(leaf_id, 0, true);
+    }
+}
+
 
 void LeafSwitch::generateCongaRoute(route_t *&fwd, route_t *&rev, TCPFlow &flow) {
     const int TOTAL_SERVERS = N_LEAF * N_SERVER;
@@ -121,43 +133,52 @@ double LeafSwitch::calculateDRE(uint32_t core_id) {
     return newDRE;
 }
 
-// void LeafSwitch::cleanupStaleEntries(time_t currentTime) {
-//     const time_t ENTRY_TIMEOUT = timeFromMs(100); // 100ms timeout
-//
-//     auto shouldRemove = [currentTime, ENTRY_TIMEOUT](const CongestionInfo &info) {
-//         return (currentTime - info.timestamp) > ENTRY_TIMEOUT;
-//     };
-//
-//     // Clean up stale entries from both tables
-//     for (auto it = congestionToLeafTable.begin(); it != congestionToLeafTable.end();) {
-//         if (shouldRemove(it->second)) {
-//             it = congestionToLeafTable.erase(it);
-//         } else {
-//             ++it;
-//         }
-//     }
-//
-//     for (auto it = congestionFromLeafTable.begin(); it != congestionFromLeafTable.end();) {
-//         if (shouldRemove(it->second)) {
-//             it = congestionFromLeafTable.erase(it);
-//         } else {
-//             ++it;
-//         }
-//     }
-// }
+void LeafSwitch::processCongestionFeedback(const DataAck& ack) {
+    if (ack.hasCongaFeedback() && ack.congaFeedback.leafId != leaf_id) {
+        auto now = EventList::Get().now();
+
+        // Update congestion table
+        congestionToLeafTable[ack.congaFeedback.leafId][ack.congaFeedback.coreId] = {
+            ack.congaFeedback.congestionMetric,
+            now
+        };
+    }
+}
 
 double LeafSwitch::getPathCongestion(uint32_t dstLeafId, uint32_t coreId) {
-    // Find remote congestion from table
-    double remoteCongestion = 0.0;  // Default if no entry in the table
-    auto leafEntry = congestionToLeafTable.find(dstLeafId);
+    auto now = EventList::Get().now();
 
-    if (leafEntry != congestionToLeafTable.end()) {
-        auto queueEntry = leafEntry->second.find(coreId);
-        if (queueEntry != leafEntry->second.end()) {
-            remoteCongestion = queueEntry->second;
+    // Check for remote congestion feedback
+    double remoteCongestion = 0.0;
+    auto leafIt = congestionToLeafTable.find(dstLeafId);
+    if (leafIt != congestionToLeafTable.end()) {
+        auto coreIt = leafIt->second.find(coreId);
+        if (coreIt != leafIt->second.end()) {
+            // Check if feedback is still valid
+            if (now - coreIt->second.timestamp < CONGESTION_TIMEOUT) {
+                remoteCongestion = coreIt->second.congestionMetric;
+            }
         }
     }
 
     // Return maximum of local and remote congestion
     return remoteCongestion;
+}
+
+void LeafSwitch::cleanupStaleEntries(simtime_picosec now) {
+    for (auto leafIt = congestionToLeafTable.begin(); leafIt != congestionToLeafTable.end();) {
+        for (auto coreIt = leafIt->second.begin(); coreIt != leafIt->second.end();) {
+            if (now - coreIt->second.timestamp > CONGESTION_TIMEOUT) {
+                coreIt = leafIt->second.erase(coreIt);
+            } else {
+                ++coreIt;
+            }
+        }
+
+        if (leafIt->second.empty()) {
+            leafIt = congestionToLeafTable.erase(leafIt);
+        } else {
+            ++leafIt;
+        }
+    }
 }

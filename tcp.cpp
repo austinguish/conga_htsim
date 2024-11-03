@@ -139,6 +139,13 @@ TcpSrc::receivePacket(Packet &pkt)
     DataAck::seq_t seqno = p->ackno();
     simtime_picosec ts = p->ts();
 
+    if (p->hasCongaFeedback()) {
+        cout << "[TcpSrc::receivePacket] - leaf_id: "
+             << p->congaFeedback.leafId
+             << " core_id: " << p->congaFeedback.coreId
+             << " metric: " << p->congaFeedback.congestionMetric << endl;
+    }
+
     if (p->hasCongaFeedback() && _myLeafSwitch) {
         _myLeafSwitch->processCongestionFeedback(*p);
     }

@@ -123,10 +123,10 @@ conga_testbed(const ArgList &args, Logfile &logfile)
         }
     }
 
-    for (int i = 0; i < N_LEAF; i++) {
-        congaSwitch.leaf_id = i;
-        congaSwitch.initializeQueues();
-    }
+    // for (int i = 0; i < N_LEAF; i++) {
+    //     congaSwitch.leaf_id = i;
+    //     congaSwitch.initializeQueues();
+    // }
 
     // Setup flow generation
     // todo change the data Source and the workloads

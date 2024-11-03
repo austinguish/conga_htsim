@@ -58,19 +58,18 @@ void
 Queue::receivePacket(Packet &pkt)
 {
     // First check if this is an ACK at a leaf queue that needs congestion feedback
-    if (isLeafQueue) {
+    if (isDstLeafQueue) {
         DataAck* ack = dynamic_cast<DataAck*>(&pkt);
         if (ack != nullptr) {
-            // Calculate local congestion
             double queueUtilization = static_cast<double>(_queuesize) /
                                     static_cast<double>(_maxsize);
 
-            cout << "Queue " << str() << " setting feedback - leaf_id: " << leaf_id
+            cout << "[Queue::receivePacket] Queue " << str() << " setting feedback - leaf_id: " << leaf_id
                  << " core_id: " << core_id
-                 << " isLeafQueue: " << isLeafQueue
+                 << " isLeafQueue: " << isDstLeafQueue
                  << " utilization: " << queueUtilization << endl;
 
-            // Add feedback to ACK packet
+            // Use the core_id that was tracked in the packet
             ack->setCongaFeedback(leaf_id, core_id, queueUtilization);
         }
     }

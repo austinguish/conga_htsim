@@ -47,12 +47,14 @@ public:
     // add switch information
     uint32_t leaf_id;
     uint32_t core_id;
-    bool isLeafQueue; // true if this queue is in a leaf switch
+    bool isCoreQueue;
+    bool isDstLeafQueue; // true if this queue is in a leaf switch
 
-    void setLeafInfo(uint32_t leafId, uint32_t coreId, bool isLeaf) {
+    void setLeafInfo(uint32_t leafId, uint32_t coreId, bool isCore, bool isDst) {
         leaf_id = leafId;
         core_id = coreId;
-        isLeafQueue = isLeaf;
+        isCoreQueue = isCore;
+        isDstLeafQueue = isDst;
     }
 
     // Override receivePacket to handle congestion feedback

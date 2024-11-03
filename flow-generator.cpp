@@ -9,8 +9,7 @@ FlowGenerator::FlowGenerator(DataSource::EndHost endhost,
                              route_gen_t rg,
                              linkspeed_bps flowRate, 
                              uint32_t avgFlowSize, 
-                             Workloads::FlowDist flowSizeDist,
-                             conga::LeafSwitch* congaSwitch)
+                             Workloads::FlowDist flowSizeDist)
     : EventSource("FlowGen"),
     _prefix(""),
     _endhost(endhost),

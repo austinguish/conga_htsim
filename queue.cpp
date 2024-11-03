@@ -65,6 +65,11 @@ Queue::receivePacket(Packet &pkt)
             double queueUtilization = static_cast<double>(_queuesize) /
                                     static_cast<double>(_maxsize);
 
+            cout << "Queue " << str() << " setting feedback - leaf_id: " << leaf_id
+                 << " core_id: " << core_id
+                 << " isLeafQueue: " << isLeafQueue
+                 << " utilization: " << queueUtilization << endl;
+
             // Add feedback to ACK packet
             ack->setCongaFeedback(leaf_id, core_id, queueUtilization);
         }

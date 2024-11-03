@@ -89,7 +89,7 @@ uint32_t LeafSwitch::selectUplink(uint32_t dstLeafId) {
         double remoteCongestion = getPathCongestion(dstLeafId, core_id);
         double pathCongestion = std::max(localDRE, remoteCongestion);
 
-        std::cout << "calculated DRE:" << localDRE << "read RemoteCongestion:" << remoteCongestion << '\n';
+        std::cout << "calculated DRE:" << localDRE << " RemoteCongestion:" << remoteCongestion << '\n';
 
         if (pathCongestion < minCongestion) {
             minCongestion = pathCongestion;
@@ -141,6 +141,9 @@ void LeafSwitch::processCongestionFeedback(const DataAck& ack) {
             ack.congaFeedback.congestionMetric,
             now
         };
+        printf("leafid %d, coreid %d, congestionMetric is %f \n", ack.congaFeedback.leafId,
+            ack.congaFeedback.coreId,
+            ack.congaFeedback.congestionMetric);
     }
 }
 

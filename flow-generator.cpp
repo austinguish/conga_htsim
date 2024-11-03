@@ -174,7 +174,6 @@ FlowGenerator::createFlow(uint64_t flowSize,
                      src = new TcpSrc(NULL, NULL, flowSize);
                      snk = new TcpSink();
 
-                     uint32_t src_leaf = src_node / N_SERVER;
                      src->setLeafSwitch(_congaSwitch);
 
                      if (_endhost == DataSource::DCTCP || _endhost == DataSource::D_DCTCP) {

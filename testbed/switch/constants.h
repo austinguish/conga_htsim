@@ -4,6 +4,7 @@
 #include <cstdint>
 #ifndef HTSIM_CONSTANTS_H
 #define HTSIM_CONSTANTS_H
+namespace conga {
 const int N_CORE = 12;      // Core(Spine) switches
 const int N_LEAF = 24;      // Leaf switches
 const int N_SERVER = 32;
@@ -17,5 +18,5 @@ const uint64_t LEAF_SPEED = 10000000000ULL;  // 10Gbps for leaf-server
 const uint64_t CORE_SPEED = 40000000000ULL;  // 40Gbps for leaf-core
 
 const double LINK_DELAY = 0.1;  // Link delay in microseconds
-
+}
 #endif //HTSIM_CONSTANTS_H

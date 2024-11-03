@@ -86,9 +86,10 @@ uint32_t LeafSwitch::selectUplink(uint32_t dstLeafId) {
 
     for (int core_id = 0; core_id < N_CORE; core_id++) {
         double localDRE = calculateDRE(core_id);
-        std::cout << "calculated DRE:" << localDRE << '\n';
         double remoteCongestion = getPathCongestion(dstLeafId, core_id);
         double pathCongestion = std::max(localDRE, remoteCongestion);
+
+        std::cout << "calculated DRE:" << localDRE << "read RemoteCongestion:" << remoteCongestion << '\n';
 
         if (pathCongestion < minCongestion) {
             minCongestion = pathCongestion;

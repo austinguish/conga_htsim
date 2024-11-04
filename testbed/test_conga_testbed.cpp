@@ -65,8 +65,8 @@ namespace conga {
         if (it != flowPathTable.end()) {
             // 如果流已存在，使用之前选择的路径
             core_switch = it->second;
-            std::cout << "[DEBUG-HASH] Using existing path for flow " << hash
-                    << " via core " << core_switch << std::endl;
+            // std::cout << "[DEBUG-HASH] Using existing path for flow " << hash
+            //         << " via core " << core_switch << std::endl;
         } else {
             // 新流，选择最佳路径
             LeafSwitch *srcLeafSwitch;
@@ -83,9 +83,9 @@ namespace conga {
 
             // 存储新流的路径选择
             flowPathTable[hash] = core_switch;
-            std::cout << "[DEBUG-HASH] New flow " << hash
-                    << " selecting core " << core_switch
-                    << " with congestion " << minCongestion << std::endl;
+            // std::cout << "[DEBUG-HASH] New flow " << hash
+            //         << " selecting core " << core_switch
+            //         << " with congestion " << minCongestion << std::endl;
         }
 
         qServerLeaf[src_leaf][src_server]->setDstLeafId(dst_leaf); // 源服务器到叶子
@@ -113,9 +113,9 @@ namespace conga {
             qLeafServer[src_leaf][src_server]->setCoreId(core_switch);
         }
 
-        std::cout << "[DEBUG] Selected core switch " << core_switch
-                << " for route from leaf " << src_leaf
-                << " to leaf " << dst_leaf << std::endl;
+        // std::cout << "[DEBUG] Selected core switch " << core_switch
+        //         << " for route from leaf " << src_leaf
+        //         << " to leaf " << dst_leaf << std::endl;
 
         // Create routes
         fwd = new route_t();
@@ -217,10 +217,10 @@ conga_testbed(const ArgList &args, Logfile &logfile) {
             createQueue(QueueType, leafCoreQueue, CORE_SPEED, LEAF_BUFFER, logfile, name);
             leafCoreQueue->setName(name);
             qLeafCore[i][j] = dynamic_cast<LeafSwitch *>(leafCoreQueue); // 转换为LeafSwitch
-            if (qLeafCore[i][j]) {
-                cout << "[DEBUG] Successfully created LeafSwitch for leaf-core "
-                        << i << "-" << j << endl;
-            }
+            // if (qLeafCore[i][j]) {
+            //     cout << "[DEBUG] Successfully created LeafSwitch for leaf-core "
+            //             << i << "-" << j << endl;
+            // }
             logfile.writeName(*(qLeafCore[i][j]));
 
             pLeafCore[i][j] = new Pipe(timeFromUs(LINK_DELAY));
@@ -238,10 +238,10 @@ conga_testbed(const ArgList &args, Logfile &logfile) {
             leafServerQueue->setName(name);
             createQueue(QueueType, leafServerQueue, LEAF_SPEED, LEAF_BUFFER, logfile, name);
             qLeafServer[i][j] = dynamic_cast<LeafSwitch *>(leafServerQueue);
-            if (qLeafServer[i][j]) {
-                cout << "[DEBUG] Successfully created LeafSwitch for leaf-server "
-                        << i << "-" << j << endl;
-            }
+            // if (qLeafServer[i][j]) {
+            //     cout << "[DEBUG] Successfully created LeafSwitch for leaf-server "
+            //             << i << "-" << j << endl;
+            // }
             logfile.writeName(*(qLeafServer[i][j]));
 
             pLeafServer[i][j] = new Pipe(timeFromUs(LINK_DELAY));
@@ -254,10 +254,10 @@ conga_testbed(const ArgList &args, Logfile &logfile) {
             serverLeafQueue->setName(name);
             createQueue(QueueType, serverLeafQueue, LEAF_SPEED, ENDH_BUFFER, logfile, name);
             qServerLeaf[i][j] = dynamic_cast<LeafSwitch *>(serverLeafQueue);
-            if (qServerLeaf[i][j]) {
-                cout << "[DEBUG] Successfully created LeafSwitch for server-leaf "
-                        << i << "-" << j << endl;
-            }
+            // if (qServerLeaf[i][j]) {
+            //     cout << "[DEBUG] Successfully created LeafSwitch for server-leaf "
+            //             << i << "-" << j << endl;
+            // }
             logfile.writeName(*(qServerLeaf[i][j]));
 
             pServerLeaf[i][j] = new Pipe(timeFromUs(LINK_DELAY));
@@ -418,13 +418,13 @@ void conga::createQueue(std::string &qType, Queue *&queue, uint64_t speed, uint6
 
     queue = leafSwitch;
 
-    cout << "[DEBUG] Created LeafSwitch for " << name
-            << "\n  Type: " << (name.find("leaf-core") != string::npos
-                                    ? "leaf-core"
-                                    : name.find("leaf-server") != string::npos
-                                          ? "leaf-server"
-                                          : "server-leaf")
-            << "\n  Leaf ID: " << leaf_id
-            << "\n  Core ID: " << core_id
-            << endl;
+    // cout << "[DEBUG] Created LeafSwitch for " << name
+    //         << "\n  Type: " << (name.find("leaf-core") != string::npos
+    //                                 ? "leaf-core"
+    //                                 : name.find("leaf-server") != string::npos
+    //                                       ? "leaf-server"
+    //                                       : "server-leaf")
+    //         << "\n  Leaf ID: " << leaf_id
+    //         << "\n  Core ID: " << core_id
+    //         << endl;
 }

@@ -49,7 +49,7 @@ namespace conga {
 
         // Select best core switch using LeafSwitch
         uint32_t core_switch = 0;
-        LeafSwitch* srcLeafSwitch;
+        LeafSwitch *srcLeafSwitch;
         // set to minimum double value
         double minCongestion = std::numeric_limits<double>::max();
         for (int i = 0; i < N_CORE; i++) {
@@ -61,11 +61,30 @@ namespace conga {
             }
         }
 
-        qLeafCore[core_switch][src_leaf]->setDstLeafId(dst_leaf);
-        qLeafServer[dst_leaf][dst_server]->setDstLeafId(dst_leaf);
-        qServerLeaf[dst_leaf][dst_server]->setDstLeafId(dst_leaf);
-        qLeafCore[core_switch][dst_leaf]->setDstLeafId(dst_leaf);
+        qServerLeaf[src_leaf][src_server]->setDstLeafId(dst_leaf); // 源服务器到叶子
 
+        if (src_leaf != dst_leaf) {
+            // 源叶子到核心
+            qLeafCore[core_switch][src_leaf]->setDstLeafId(dst_leaf);
+            qLeafCore[core_switch][src_leaf]->setCoreId(core_switch);
+
+            // 目标叶子到服务器
+            qLeafServer[dst_leaf][dst_server]->setDstLeafId(dst_leaf);
+            qLeafServer[dst_leaf][dst_server]->setCoreId(core_switch);
+        }
+
+        // 反向路径
+        qServerLeaf[dst_leaf][dst_server]->setDstLeafId(src_leaf); // 目标服务器到叶子
+
+        if (src_leaf != dst_leaf) {
+            // 目标叶子到核心
+            qLeafCore[core_switch][dst_leaf]->setDstLeafId(src_leaf);
+            qLeafCore[core_switch][dst_leaf]->setCoreId(core_switch);
+
+            // 源叶子到服务器
+            qLeafServer[src_leaf][src_server]->setDstLeafId(src_leaf);
+            qLeafServer[src_leaf][src_server]->setCoreId(core_switch);
+        }
 
         std::cout << "[DEBUG] Selected core switch " << core_switch
                 << " for route from leaf " << src_leaf
@@ -120,7 +139,7 @@ namespace conga {
 
     void generateRandomRoute(route_t *&fwd, route_t *&rev, uint32_t &src, uint32_t &dst);
 
-    void createQueue(std::string &qType, Queue *&queue, uint64_t speed, uint64_t buffer, Logfile &lf,std::string name);
+    void createQueue(std::string &qType, Queue *&queue, uint64_t speed, uint64_t buffer, Logfile &lf, std::string name);
 }
 
 
@@ -318,11 +337,12 @@ conga_testbed(const ArgList &args, Logfile &logfile) {
 //     rev->push_back(pLeafServer[src_leaf][src_server]);
 // }
 
-void conga::createQueue(std::string &qType, Queue *&queue, uint64_t speed, uint64_t buffer, Logfile &logfile, std::string name) {
+void conga::createQueue(std::string &qType, Queue *&queue, uint64_t speed, uint64_t buffer, Logfile &logfile,
+                        std::string name) {
     QueueLoggerSampling *qs = new QueueLoggerSampling(timeFromMs(10));
     logfile.addLogger(*qs);
 
-    // 检查队列名称以确定是否应该创建 LeafSwitch
+    // 解析队列名称
     bool isLeafQueue = (name.find("leaf-server") != string::npos ||
                         name.find("server-leaf") != string::npos ||
                         name.find("leaf-core") != string::npos);
@@ -340,32 +360,44 @@ void conga::createQueue(std::string &qType, Queue *&queue, uint64_t speed, uint6
         } else {
             queue = new Queue(speed, buffer, qs);
         }
-    } else {
-        size_t lastDash = name.find_last_of('-');
-        size_t secondLastDash = name.find_last_of('-', lastDash - 1);
-        uint32_t leaf_id;
-
-        if (name.find("leaf-core") != string::npos) {
-            leaf_id = stoi(name.substr(lastDash + 1));
-        } else {
-            leaf_id = stoi(name.substr(secondLastDash + 1,
-                                       lastDash - secondLastDash - 1));
-        }
-
-        // 创建 LeafSwitch
-        LeafSwitch *leafSwitch = new LeafSwitch(speed, buffer, qs);
-        leafSwitch->setLeafId(leaf_id);
-
-        // 如果是 leaf-core 队列，设置 core_id
-        if (name.find("leaf-core") != string::npos) {
-            uint32_t core_id = stoi(name.substr(secondLastDash + 1,
-                                                lastDash - secondLastDash - 1));
-            leafSwitch->setCoreId(core_id);
-        }
-
-        queue = leafSwitch;
-
-        cout << "[DEBUG] Created LeafSwitch for " << name
-                << " with leaf_id: " << leaf_id << endl;
+        return;
     }
+
+    // 解析ID
+    size_t lastDash = name.find_last_of('-');
+    size_t secondLastDash = name.find_last_of('-', lastDash - 1);
+    size_t firstDash = name.find_first_of('-');
+    uint32_t leaf_id = 0;
+    uint32_t core_id = 0;
+
+    LeafSwitch *leafSwitch = new LeafSwitch(speed, buffer, qs);
+
+    // 根据不同类型的队列设置ID
+    if (name.find("leaf-core") != string::npos) {
+        // q-leaf-core-[core_id]-[leaf_id]
+        core_id = stoi(name.substr(secondLastDash + 1, lastDash - secondLastDash - 1));
+        leaf_id = stoi(name.substr(lastDash + 1));
+        leafSwitch->setLeafId(leaf_id);
+        leafSwitch->setCoreId(core_id);
+    } else if (name.find("leaf-server") != string::npos) {
+        // q-leaf-server-[leaf_id]-[server_id]
+        leaf_id = stoi(name.substr(secondLastDash + 1, lastDash - secondLastDash - 1));
+        leafSwitch->setLeafId(leaf_id);
+    } else if (name.find("server-leaf") != string::npos) {
+        // q-server-leaf-[leaf_id]-[server_id]
+        leaf_id = stoi(name.substr(secondLastDash + 1, lastDash - secondLastDash - 1));
+        leafSwitch->setLeafId(leaf_id);
+    }
+
+    queue = leafSwitch;
+
+    cout << "[DEBUG] Created LeafSwitch for " << name
+            << "\n  Type: " << (name.find("leaf-core") != string::npos
+                                    ? "leaf-core"
+                                    : name.find("leaf-server") != string::npos
+                                          ? "leaf-server"
+                                          : "server-leaf")
+            << "\n  Leaf ID: " << leaf_id
+            << "\n  Core ID: " << core_id
+            << endl;
 }

@@ -23,6 +23,7 @@ public:
     virtual ~Logged() {}
 
     void setName(const std::string &name) { _name = name; }
+    std::string getName() { return _name; }
     virtual const std::string& str() { return _name; };
 
     uint32_t id;

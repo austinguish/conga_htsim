@@ -14,11 +14,11 @@ namespace conga {
     extern Pipe *pCoreLeaf[N_CORE][N_LEAF];
     extern Queue *qCoreLeaf[N_CORE][N_LEAF];
     extern Pipe *pLeafCore[N_CORE][N_LEAF];
-    extern Queue *qLeafCore[N_CORE][N_LEAF];
+    extern LeafSwitch *qLeafCore[N_CORE][N_LEAF];
     extern Pipe *pLeafServer[N_LEAF][N_SERVER];
-    extern Queue *qLeafServer[N_LEAF][N_SERVER];
+    extern LeafSwitch *qLeafServer[N_LEAF][N_SERVER];
     extern Pipe *pServerLeaf[N_LEAF][N_SERVER];
-    extern Queue *qServerLeaf[N_LEAF][N_SERVER];
+    extern LeafSwitch *qServerLeaf[N_LEAF][N_SERVER];
 
     class ECMPSwitch {
     private:

@@ -1,64 +1,40 @@
-//
-// Created by 蒋逸伟 on 24-10-30.
-//
 #ifndef HTSIM_LEAFSWITCH_H
 #define HTSIM_LEAFSWITCH_H
-#include <random>
-#include "../eventlist.h"
+
+#include <datapacket.h>
+
 #include "../queue.h"
-#include "../pipe.h"
-#include "../datapacket.h"
-#include "tcp_flow.h"
+#include "../network.h"
 #include "constants.h"
-
-// Forward declarations
-class Queue;
-class EventList;
-
-struct UplinkInfo {
-    Queue* queue;
-    uint32_t coreId;
-    double currentCongestion;
-};
+#include <map>
+#include <vector>
 
 namespace conga {
 
-    extern Pipe *pCoreLeaf[N_CORE][N_LEAF];
-    extern Queue *qCoreLeaf[N_CORE][N_LEAF];
-    extern Pipe *pLeafCore[N_CORE][N_LEAF];
-    extern Queue *qLeafCore[N_CORE][N_LEAF];
-    extern Pipe *pLeafServer[N_LEAF][N_SERVER];
-    extern Queue *qLeafServer[N_LEAF][N_SERVER];
-    extern Pipe *pServerLeaf[N_LEAF][N_SERVER];
-    extern Queue *qServerLeaf[N_LEAF][N_SERVER];
-
-    class LeafSwitch {
+    class LeafSwitch : public Queue {
     public:
-        uint32_t leaf_id;
+        LeafSwitch(linkspeed_bps bitrate, mem_b maxsize, QueueLogger* logger)
+            : Queue(bitrate, maxsize, logger), leaf_id(0) {}
 
-        LeafSwitch();
+        void setLeafId(uint32_t id) { leaf_id = id; }
+        uint32_t getLeafId() const { return leaf_id; }
 
-        void initializeQueues() const;
+        double measureLocalCongestion(uint32_t core_id);
 
-        // Path selection
-        uint32_t selectUplink(uint32_t srcLeafId, uint32_t dstLeafId);
-
-        // Congestion monitoring
-        void updateCongestionFromLeaf(uint32_t leafId, double congestionMetric);
-        void updateCongestionToLeaf(uint32_t leafId, double congestionMetric);
-
-        // DRE (Direct Response to ECN) implementation
-        double calculateDRE(uint32_t core_id, uint32_t src_leaf_id);
-
-        void generateCongaRoute(route_t*& fwd, route_t*& rev, TCPFlow& flow);
-
-        void processCongestionFeedback(const DataAck& ack);
+        // override receivePacket
+        void receivePacket(Packet& pkt) override;
 
     private:
-        struct CongestionEntry {
-            double congestionMetric;
+        uint32_t leaf_id;
+        uint32_t core_id;
+        uint32_t dst_leaf_id;
+
+        // 拥塞信息结构
+        struct CongestionInfo {
+            double metric;
+            uint32_t core_id;
             simtime_picosec timestamp;
-        };
+        } congestion_to_leaf;
 
         struct QueueMetrics {
             simtime_picosec lastUpdateTime;
@@ -71,22 +47,30 @@ namespace conga {
 
             // Default constructor if needed
             QueueMetrics() : lastUpdateTime(0), currentDRE(0.0) {}
-        };
-
-        std::vector<UplinkInfo> uplinks;
-        std::map<uint32_t, std::map<uint32_t, CongestionEntry>> congestionToLeafTable; // <dst leaf_id, <core_id, CongestionEntry>>
-        static constexpr simtime_picosec CONGESTION_TIMEOUT = 500000000;
-
-        // Helper methodd
-        double getPathCongestion(uint32_t dstLeafId, uint32_t coreId);
-        void cleanupStaleEntries(simtime_picosec now);
-
-        // Store metrics for each uplink queue
-        std::map<uint32_t, QueueMetrics> uplinkMetrics;
-        static constexpr double ALPHA = 0.1;  // EWMA smoothing factor
+        } metrics_;
         static constexpr simtime_picosec UPDATE_INTERVAL = 50000000;
-    };
-}
 
+        double calculateDRE(uint32_t core_id);
+        double getPathCongestion(uint32_t core_id) const;
+
+        // 存储从其他叶子收到的拥塞信息
+        std::map<uint32_t, std::vector<CongestionInfo>> congestionFromLeafTable;
+
+        // 用于反馈选择的计数器
+        std::map<uint32_t, uint32_t> feedbackCounter;
+
+        // 处理不同类型的数据包
+        void processDataPacket(Packet& pkt);
+        void processAck(Packet& pkt);
+
+        // 更新和选择拥塞信息
+        void updateCongestionFromLeaf(uint32_t src_leaf, uint32_t core_id, double metric);
+        CongestionInfo selectFeedbackMetric(uint32_t dst_leaf);
+
+        // 清理过期条目
+        void cleanupStaleEntries();
+        static constexpr simtime_picosec ENTRY_TIMEOUT = 500000000; // 500us
+    };
+} // namespace conga
 
 #endif //HTSIM_LEAFSWITCH_H

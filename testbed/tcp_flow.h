@@ -5,6 +5,7 @@
 #ifndef HTSIM_TCP_FLOW_H
 #define HTSIM_TCP_FLOW_H
 struct TCPFlow{
+
     uint32_t src_ip;
     uint32_t dst_ip;
     uint16_t src_port;
@@ -12,7 +13,30 @@ struct TCPFlow{
     bool operator == (const TCPFlow &other) const {
         return src_ip == other.src_ip && dst_ip == other.dst_ip && src_port == other.src_port && dst_port == other.dst_port;
     }
+
+    // 添加路由信息
+    struct RouteInfo {
+        uint32_t src_leaf_id;
+        uint32_t core_id;
+        uint32_t dst_leaf_id;
+        double congestion_metric;  // congestion metric from scr leaf switch
+
+        RouteInfo() : src_leaf_id(0), core_id(0),
+                     dst_leaf_id(0), congestion_metric(0.0) {}
+    } route_info;
+
+    // Helper methods
+    void setRouteInfo(uint32_t src, uint32_t core, uint32_t dst) {
+        route_info.src_leaf_id = src;
+        route_info.core_id = core;
+        route_info.dst_leaf_id = dst;
+    }
+
+    void updateCongestionMetric(double metric) {
+        route_info.congestion_metric = metric;
+    }
 };
+
 namespace std {
     template<>
     struct hash<TCPFlow> {

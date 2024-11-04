@@ -68,6 +68,7 @@ conga_testbed(const ArgList &args, Logfile &logfile)
     string EndHost = "dctcp";
     string FlowDist = "uniform";
     string FlowGen = "random";
+    uint32_t Load = 50;
 
     // Parse command line arguments
     parseInt(args, "duration", Duration);
@@ -77,6 +78,10 @@ conga_testbed(const ArgList &args, Logfile &logfile)
     parseString(args, "endhost", EndHost);
     parseString(args, "flowdist", FlowDist);
     parseString(args, "flowgen", FlowGen);
+    parseInt(args, "load", Load);
+
+    Utilization = Load / 100.0;
+
     // Initialize Core to Leaf connections
     for (int i = 0; i < N_CORE; i++) {
         for (int j = 0; j < N_LEAF; j++) {
@@ -145,11 +150,12 @@ conga_testbed(const ArgList &args, Logfile &logfile)
         fd = Workloads::PARETO;
     } else if (FlowDist == "enterprise") {
         fd = Workloads::ENTERPRISE;
+    } else if (FlowDist == "datamining") {
+        fd = Workloads::DATAMINING;
     }
 
     // Calculate background traffic rate
-    //TODO edit back to normal bg_flow_rate
-    double bg_flow_rate = Utilization * (CORE_SPEED * N_CORE * N_LEAF) *0.00001;
+    double bg_flow_rate = Utilization * (CORE_SPEED * N_CORE * N_LEAF);
     FlowGenerator *bgFlowGen = nullptr;
     // Create flow generator
     if (FlowGen=="random"){
@@ -165,6 +171,12 @@ conga_testbed(const ArgList &args, Logfile &logfile)
 
     // Set simulation end time
     EventList::Get().setEndtime(timeFromSec(Duration));
+
+    cout << "Starting simulation with:\n"
+         << "Algorithm: " << FlowGen << "\n"
+         << "Workload: " << FlowDist << "\n"
+         << "Load: " << Load << "%\n"
+         << "Duration: " << Duration << "s\n";
 }
 
 void

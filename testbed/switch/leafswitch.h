@@ -15,12 +15,6 @@
 class Queue;
 class EventList;
 
-// struct CongestionInfo {
-//     uint32_t leafId;
-//     double congestionMetric;
-//     time_t timestamp;
-// };
-
 struct UplinkInfo {
     Queue* queue;
     uint32_t coreId;
@@ -47,17 +41,14 @@ namespace conga {
         void initializeQueues() const;
 
         // Path selection
-        uint32_t selectUplink(uint32_t dstLeafId);
+        uint32_t selectUplink(uint32_t srcLeafId, uint32_t dstLeafId);
 
         // Congestion monitoring
         void updateCongestionFromLeaf(uint32_t leafId, double congestionMetric);
         void updateCongestionToLeaf(uint32_t leafId, double congestionMetric);
 
         // DRE (Direct Response to ECN) implementation
-        double calculateDRE(uint32_t core_id);
-
-        // Uplink management
-        // void addUplink(Queue* queue, uint32_t remoteLeafId);
+        double calculateDRE(uint32_t core_id, uint32_t src_leaf_id);
 
         void generateCongaRoute(route_t*& fwd, route_t*& rev, TCPFlow& flow);
 
@@ -82,21 +73,13 @@ namespace conga {
             QueueMetrics() : lastUpdateTime(0), currentDRE(0.0) {}
         };
 
-
-
         std::vector<UplinkInfo> uplinks;
         std::map<uint32_t, std::map<uint32_t, CongestionEntry>> congestionToLeafTable; // <dst leaf_id, <core_id, CongestionEntry>>
         static constexpr simtime_picosec CONGESTION_TIMEOUT = 500000000;
 
-        // flowlet aging
-        float flowlet_Tfl; // flowlet timer
-
-
         // Helper methodd
         double getPathCongestion(uint32_t dstLeafId, uint32_t coreId);
         void cleanupStaleEntries(simtime_picosec now);
-
-
 
         // Store metrics for each uplink queue
         std::map<uint32_t, QueueMetrics> uplinkMetrics;

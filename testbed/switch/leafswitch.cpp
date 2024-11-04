@@ -46,9 +46,9 @@ void LeafSwitch::generateCongaRoute(route_t *&fwd, route_t *&rev, TCPFlow &flow)
     uint32_t src_server = src % N_SERVER;
     uint32_t dst_server = dst % N_SERVER;
 
-    uint32_t core_switch = selectUplink(dst_leaf);
+    uint32_t core_switch = selectUplink(src_leaf, dst_leaf);
     printf("src_leaf = %d, dst_leaf = %d\n", src_leaf, dst_leaf);
-    printf("select core switch %d\n", core_switch);
+    // printf("select core switch %d\n", core_switch);
 
     fwd = new route_t();
     rev = new route_t();
@@ -91,38 +91,38 @@ void LeafSwitch::generateCongaRoute(route_t *&fwd, route_t *&rev, TCPFlow &flow)
     qLeafServer[src_leaf][src_server]->setLeafInfo(src_leaf, core_switch, false, false);
     rev->push_back(qLeafServer[src_leaf][src_server]);
 
-    for (auto q : *fwd) {
-        Queue* queue = dynamic_cast<Queue*>(q);
-        if (queue) {
-            std::cout << "[DEBUG-ROUTE] Forward path queue: " << queue->str()
-                 << " leaf_id: " << queue->leaf_id
-                 << " core_id: " << queue->core_id
-                 << " isCoreQueue: " << queue->isCoreQueue
-                 << " isDstLeafQueue: " << queue->isDstLeafQueue
-                 << std::endl;
-        }
-    }
+    // for (auto q : *fwd) {
+    //     Queue* queue = dynamic_cast<Queue*>(q);
+    //     if (queue) {
+    //         std::cout << "[DEBUG-ROUTE] Forward path queue: " << queue->str()
+    //              << " leaf_id: " << queue->leaf_id
+    //              << " core_id: " << queue->core_id
+    //              << " isCoreQueue: " << queue->isCoreQueue
+    //              << " isDstLeafQueue: " << queue->isDstLeafQueue
+    //              << std::endl;
+    //     }
+    // }
 
-    for (auto q : *rev) {
-        Queue* queue = dynamic_cast<Queue*>(q);
-        if (queue) {
-            std::cout << "[DEBUG-ROUTE] Reverse path queue: " << queue->str()
-                 << " leaf_id: " << queue->leaf_id
-                 << " core_id: " << queue->core_id
-                 << " isCoreQueue: " << queue->isCoreQueue
-                 << " isDstLeafQueue: " << queue->isDstLeafQueue
-                 << std::endl;
-        }
-    }
+    // for (auto q : *rev) {
+    //     Queue* queue = dynamic_cast<Queue*>(q);
+    //     if (queue) {
+    //         std::cout << "[DEBUG-ROUTE] Reverse path queue: " << queue->str()
+    //              << " leaf_id: " << queue->leaf_id
+    //              << " core_id: " << queue->core_id
+    //              << " isCoreQueue: " << queue->isCoreQueue
+    //              << " isDstLeafQueue: " << queue->isDstLeafQueue
+    //              << std::endl;
+    //     }
+    // }
 }
 
 
-uint32_t LeafSwitch::selectUplink(uint32_t dstLeafId) {
+uint32_t LeafSwitch::selectUplink(uint32_t srcLeafId, uint32_t dstLeafId) {
     uint32_t bestCorePath = 0;
     double minCongestion = std::numeric_limits<double>::max();
 
     for (int core_id = 0; core_id < N_CORE; core_id++) {
-        double localDRE = calculateDRE(core_id);
+        double localDRE = calculateDRE(core_id, srcLeafId);
         double remoteCongestion = getPathCongestion(dstLeafId, core_id);
         double pathCongestion = std::max(localDRE, remoteCongestion);
 
@@ -137,8 +137,8 @@ uint32_t LeafSwitch::selectUplink(uint32_t dstLeafId) {
     return bestCorePath;
 }
 
-double LeafSwitch::calculateDRE(uint32_t core_id) {
-    Queue* uplinkQueue = qLeafCore[core_id][this->leaf_id];
+double LeafSwitch::calculateDRE(uint32_t core_id, uint32_t src_leaf_id) {
+    Queue* uplinkQueue = qLeafCore[core_id][src_leaf_id];
     auto now = EventList::Get().now();
 
     // Initialize metrics if not exists
@@ -173,19 +173,14 @@ void LeafSwitch::processCongestionFeedback(const DataAck& ack) {
     if (ack.hasCongaFeedback() && ack.congaFeedback.leafId != leaf_id) {
         auto now = EventList::Get().now();
 
-        std::cout << "[LeafSwitch::processCongestionFeedback] before LeafSwitch " << leaf_id << " processing feedback - from_leaf: "
-            << ack.congaFeedback.leafId
-            << " core_id: " << ack.congaFeedback.coreId
-            << " metric: " << ack.congaFeedback.congestionMetric << std::endl;
-
         // Update congestion table
         congestionToLeafTable[ack.congaFeedback.leafId][ack.congaFeedback.coreId] = {
             ack.congaFeedback.congestionMetric,
             now
         };
-        printf("[LeafSwitch::processCongestionFeedback] after leafid %d, coreid %d, congestionMetric is %f \n", ack.congaFeedback.leafId,
-            ack.congaFeedback.coreId,
-            ack.congaFeedback.congestionMetric);
+        // printf("[LeafSwitch::processCongestionFeedback] after leafid %d, coreid %d, congestionMetric is %f \n", ack.congaFeedback.leafId,
+        //     ack.congaFeedback.coreId,
+        //     ack.congaFeedback.congestionMetric);
     }
 }
 

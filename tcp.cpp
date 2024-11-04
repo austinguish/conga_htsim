@@ -139,12 +139,12 @@ TcpSrc::receivePacket(Packet &pkt)
     DataAck::seq_t seqno = p->ackno();
     simtime_picosec ts = p->ts();
 
-    if (p->hasCongaFeedback()) {
-        cout << "[TcpSrc::receivePacket] - leaf_id: "
-             << p->congaFeedback.leafId
-             << " core_id: " << p->congaFeedback.coreId
-             << " metric: " << p->congaFeedback.congestionMetric << endl;
-    }
+    // if (p->hasCongaFeedback()) {
+    //     cout << "[DEBUG TcpSrc::receivePacket] - leaf_id: "
+    //          << p->congaFeedback.leafId
+    //          << " core_id: " << p->congaFeedback.coreId
+    //          << " metric: " << p->congaFeedback.congestionMetric << endl;
+    // }
 
     if (p->hasCongaFeedback() && _myLeafSwitch) {
         _myLeafSwitch->processCongestionFeedback(*p);
@@ -474,10 +474,10 @@ TcpSink::receivePacket(Packet &pkt)
     DataPacket *p = (DataPacket*)(&pkt);
     simtime_picosec ts = p->ts();
 
-    cout << "[DEBUG-SINK] Received data packet at sink, "
-         << "flow_id: " << p->flow().id
-         << " node_id: " << _node_id
-         << endl;
+    // cout << "[DEBUG-SINK] Received data packet at sink, "
+    //      << "flow_id: " << p->flow().id
+    //      << " node_id: " << _node_id
+    //      << endl;
 
     processDataPacket(*p);
 
@@ -496,13 +496,13 @@ TcpSink::receivePacket(Packet &pkt)
     p->free();
 
     DataAck *ack = DataAck::newpkt(_src->_flow, *_route, 1, _cumulative_ack);
+    // //
+    // // ack->setFlag(Packet::ACK);
     //
-    // ack->setFlag(Packet::ACK);
-
-    cout << "[DEBUG-SINK] Generated ACK at sink, "
-             << "flow_id: " << ack->flow().id
-             << " route size: " << _route->size()
-             << endl;
+    // cout << "[DEBUG-SINK] Generated ACK at sink, "
+    //          << "flow_id: " << ack->flow().id
+    //          << " route size: " << _route->size()
+    //          << endl;
 
     ack->flow().logTraffic(*ack, *this, TrafficLogger::PKT_CREATESEND);
     ack->set_ts(ts);

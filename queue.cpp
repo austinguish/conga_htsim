@@ -52,36 +52,14 @@ Queue::doNextEvent() {
 
 void
 Queue::receivePacket(Packet &pkt) {
-    cout << "[DEBUG-QUEUE] Queue " << str()
-            << " received packet, flow_id: " << pkt.flow().id
-            << " isCoreQueue: " << isCoreQueue
-            << " isDstLeafQueue: " << isDstLeafQueue
-            << " leaf_id: " << leaf_id
-            << " core_id: " << core_id
-            << endl;
-
-    // First check if this is an ACK at a leaf queue that needs congestion feedback
-    if (isDstLeafQueue) {
-        DataAck* ack = dynamic_cast<DataAck*>(&pkt);
-        if (ack != nullptr) {
-            double queueUtilization = static_cast<double>(_queuesize) /
-                                    static_cast<double>(_maxsize);
-
-            ack->setCongaFeedback(leaf_id, core_id, queueUtilization);
-
-            cout << "[DEBUG-QUEUE] Set feedback - "
-                    << "leaf_id: " << leaf_id
-                    << " core_id: " << core_id
-                    << " util: " << queueUtilization
-                    << endl;
-        }
-    }
-
-    // Continue with original queue logic
+    // First handle the packet queuing
     if (_queuesize + pkt.size() > _maxsize) {
         cout << "[DEBUG-QUEUE] Queue " << str()
-                << " dropped packet due to overflow"
-                << endl;
+             << " dropped packet due to overflow"
+             << " current size: " << _queuesize
+             << " packet size: " << pkt.size()
+             << " max size: " << _maxsize
+             << endl;
 
         if (_logger) {
             _logger->logQueue(*this, QueueLogger::PKT_DROP, pkt);
@@ -91,11 +69,34 @@ Queue::receivePacket(Packet &pkt) {
         return;
     }
 
+    // Add packet to queue
     pkt.flow().logTraffic(pkt, *this, TrafficLogger::PKT_ARRIVE);
-
     bool queueWasEmpty = _enqueued.empty();
     _enqueued.push_front(&pkt);
     _queuesize += pkt.size();
+
+    // Now check for ACK and add congestion feedback after queue size is updated
+    if (isDstLeafQueue) {
+        DataAck* ack = dynamic_cast<DataAck*>(&pkt);
+        if (ack != nullptr) {
+            double queueUtilization = static_cast<double>(_queuesize) /
+                                    static_cast<double>(_maxsize);
+
+            cout << "[DEBUG-QUEUE] Queue " << str()
+                 << " current size: " << _queuesize
+                 << " max size: " << _maxsize
+                 << " utilization: " << queueUtilization
+                 << endl;
+
+            ack->setCongaFeedback(leaf_id, core_id, queueUtilization);
+
+            cout << "[DEBUG-QUEUE] Set feedback - "
+                 << "leaf_id: " << leaf_id
+                 << " core_id: " << core_id
+                 << " util: " << queueUtilization
+                 << endl;
+        }
+    }
 
     if (_logger) {
         _logger->logQueue(*this, QueueLogger::PKT_ENQUEUE, pkt);

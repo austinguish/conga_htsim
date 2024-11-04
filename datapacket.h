@@ -88,9 +88,9 @@ public:
         congaFeedback.congestionMetric = metric;
         congaFeedback.hasValidFeedback = true;
 
-        std::cout << "[setCongaFeedback] - leaf_id: " << leaf
-         << " core_id: " << core
-         << " metric: " << metric << std::endl;
+        // std::cout << "[setCongaFeedback] - leaf_id: " << leaf
+        //  << " core_id: " << core
+        //  << " metric: " << metric << std::endl;
     }
 
     bool hasCongaFeedback() const {

@@ -49,16 +49,23 @@ namespace conga {
 
         // Select best core switch using LeafSwitch
         uint32_t core_switch = 0;
+        LeafSwitch* srcLeafSwitch;
+        // set to minimum double value
+        double minCongestion = std::numeric_limits<double>::max();
         for (int i = 0; i < N_CORE; i++) {
-            LeafSwitch* srcLeafSwitch = qLeafCore[i][src_leaf];
-            double minCongestion = std::numeric_limits<double>::max();
-
+            srcLeafSwitch = qLeafCore[i][src_leaf];
             double currentCongestion = srcLeafSwitch->measureLocalCongestion(i);
             if (currentCongestion < minCongestion) {
                 minCongestion = currentCongestion;
                 core_switch = i;
             }
         }
+
+        qLeafCore[core_switch][src_leaf]->setDstLeafId(dst_leaf);
+        qLeafServer[dst_leaf][dst_server]->setDstLeafId(dst_leaf);
+        qServerLeaf[dst_leaf][dst_server]->setDstLeafId(dst_leaf);
+        qLeafCore[core_switch][dst_leaf]->setDstLeafId(dst_leaf);
+
 
         std::cout << "[DEBUG] Selected core switch " << core_switch
                 << " for route from leaf " << src_leaf

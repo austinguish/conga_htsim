@@ -21,6 +21,8 @@ namespace conga {
 
         void setCoreId(uint32_t id) { core_id = id; }
 
+        void setDstLeafId(uint32_t id) { dst_leaf_id = id; }
+
         double measureLocalCongestion(uint32_t core_id);
 
         // override receivePacket

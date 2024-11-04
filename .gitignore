@@ -1,1 +1,3 @@
 /cmake-build-debug/
+/plot/*.txt
+/plot/archive.zip

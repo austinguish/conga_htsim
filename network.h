@@ -28,7 +28,8 @@ public:
         ECN_FWD = 0,
         ECN_REV = 1,
         PP_FIRST = 2,
-        DEADLINE = 3
+        DEADLINE = 3,
+        ACK = 4
     };
 
     Packet() {
@@ -54,6 +55,8 @@ public:
 
     inline void setPriority(uint32_t p) { _priority = p; }
     inline uint32_t getPriority() { return _priority; }
+
+    uint32_t getFlags() const { return _flags; }
 
     struct CongaInfo {
         uint32_t src_leaf_id;

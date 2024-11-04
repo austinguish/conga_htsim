@@ -496,9 +496,10 @@ TcpSink::receivePacket(Packet &pkt)
     p->free();
 
     DataAck *ack = DataAck::newpkt(_src->_flow, *_route, 1, _cumulative_ack);
-    // //
-    // // ack->setFlag(Packet::ACK);
-    //
+
+    ack->setFlag(Packet::ACK);
+    ack->conga_info = p->conga_info;
+
     // cout << "[DEBUG-SINK] Generated ACK at sink, "
     //          << "flow_id: " << ack->flow().id
     //          << " route size: " << _route->size()

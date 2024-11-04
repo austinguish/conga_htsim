@@ -33,14 +33,13 @@ void LeafSwitch::receivePacket(Packet& pkt) {
     _enqueued.push_front(&pkt);
     _queuesize += pkt.size();
 
-    auto* ack = dynamic_cast<DataAck*>(&pkt);
-
-    if (ack == nullptr) {
-        // for send packet, update packet info
-        processDataPacket(pkt);
-    } else {
+    if (pkt.getFlags() >= 16) {
         // for ack packet, add remote congestion
         processAck(pkt);
+
+    } else {
+        // for send packet, update packet info
+        processDataPacket(pkt);
     }
 
     // continue normal operation
@@ -58,16 +57,8 @@ void LeafSwitch::receivePacket(Packet& pkt) {
 void LeafSwitch::processDataPacket(Packet& pkt) {
     auto congaInfo = pkt.getCongaInfo();
 
-    std::cout << "[DEBUG-PROCESSDATA] Processing Data at queue " << str()
-              << "\n  Src leaf: " << congaInfo.src_leaf_id
-              << "\n  Core: " << congaInfo.core_id
-              << "\n  Dst leaf: " << congaInfo.dst_leaf_id
-              << "\n  Congestion: " << congaInfo.congestion_metric
-              << std::endl;
-
     // 检查是否是源叶子交换机
     if (!congaInfo.has_congestion_info) {
-        // 只有源叶子交换机设置初始拥塞信息
         std::cout << "[DEBUG-SRC] Source leaf switch setting initial congestion info" << std::endl;
         pkt.setCongaInfo(
             this->leaf_id,
@@ -83,10 +74,6 @@ void LeafSwitch::processDataPacket(Packet& pkt) {
             congaInfo.src_leaf_id,
             congaInfo.core_id,
             congaInfo.congestion_metric);
-    }
-    // 其他叶子交换机不处理
-    else {
-        std::cout << "[DEBUG-SKIP] Leaf " << leaf_id << " skipping packet processing" << std::endl;
     }
 
     std::cout << "[DEBUG-PROCESSDATA-AFTER] Processing Data at queue " << str()

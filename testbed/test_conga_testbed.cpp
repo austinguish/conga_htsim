@@ -32,6 +32,13 @@ namespace conga {
     // Helper functions
     ECMPSwitch ecmpSwitch;
 
+    std::unordered_map<uint32_t, uint32_t> flowPathTable;
+
+    uint32_t flowHash(const TCPFlow &flow) {
+        std::hash<TCPFlow> hasher;
+        return static_cast<uint32_t>(hasher(flow));
+    }
+
     // Modified route generation function that uses ECMP switch
     void generateCongaRoute(route_t *&fwd, route_t *&rev, uint32_t &src, uint32_t &dst) {
         const int TOTAL_SERVERS = N_LEAF * N_SERVER;
@@ -47,18 +54,38 @@ namespace conga {
         uint32_t src_server = src % N_SERVER;
         uint32_t dst_server = dst % N_SERVER;
 
-        // Select best core switch using LeafSwitch
-        uint32_t core_switch = 0;
-        LeafSwitch *srcLeafSwitch;
-        // set to minimum double value
-        double minCongestion = std::numeric_limits<double>::max();
-        for (int i = 0; i < N_CORE; i++) {
-            srcLeafSwitch = qLeafCore[i][src_leaf];
-            double currentCongestion = srcLeafSwitch->measureLocalCongestion(i);
-            if (currentCongestion < minCongestion) {
-                minCongestion = currentCongestion;
-                core_switch = i;
+        TCPFlow flow;
+        flow.src_ip = src;
+        flow.dst_ip = dst;
+        uint32_t hash = flowHash(flow);
+
+        uint32_t core_switch;
+        auto it = flowPathTable.find(hash);
+
+        if (it != flowPathTable.end()) {
+            // 如果流已存在，使用之前选择的路径
+            core_switch = it->second;
+            std::cout << "[DEBUG-HASH] Using existing path for flow " << hash
+                    << " via core " << core_switch << std::endl;
+        } else {
+            // 新流，选择最佳路径
+            LeafSwitch *srcLeafSwitch;
+            double minCongestion = std::numeric_limits<double>::max();
+
+            for (int i = 0; i < N_CORE; i++) {
+                srcLeafSwitch = qLeafCore[i][src_leaf];
+                double currentCongestion = srcLeafSwitch->measureLocalCongestion(i);
+                if (currentCongestion < minCongestion) {
+                    minCongestion = currentCongestion;
+                    core_switch = i;
+                }
             }
+
+            // 存储新流的路径选择
+            flowPathTable[hash] = core_switch;
+            std::cout << "[DEBUG-HASH] New flow " << hash
+                    << " selecting core " << core_switch
+                    << " with congestion " << minCongestion << std::endl;
         }
 
         qServerLeaf[src_leaf][src_server]->setDstLeafId(dst_leaf); // 源服务器到叶子

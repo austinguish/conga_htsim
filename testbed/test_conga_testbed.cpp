@@ -253,7 +253,7 @@ conga_testbed(const ArgList &args, Logfile &logfile) {
         bgFlowGen = new FlowGenerator(eh, generateCongaRoute, bg_flow_rate, AvgFlowSize, fd);
     }
 
-    bgFlowGen->setTimeLimits(timeFromUs(1), timeFromSec(3) - 1);
+    bgFlowGen->setTimeLimits(timeFromUs(1), timeFromSec(Duration) - 1);
 
     // Set simulation end time
     EventList::Get().setEndtime(timeFromSec(Duration));

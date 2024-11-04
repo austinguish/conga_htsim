@@ -56,17 +56,36 @@ void LeafSwitch::receivePacket(Packet& pkt) {
 
 // Process Data Packet
 void LeafSwitch::processDataPacket(Packet& pkt) {
-    // TODO set pkt congainfo at src leaf switch
+    // set pkt congainfo at src leaf switch
+    auto congaInfo = pkt.getCongaInfo();
+    if (congaInfo.has_congestion_info == false) {
+        pkt.setCongaInfo(
+            this->leaf_id,
+            this->core_id,
+            this->dst_leaf_id,
+            this->measureLocalCongestion(core_id));
+    }
 
-    // TODO update congestionfromleaf at dst leaf switch
-
+    // update congestionfromleaf at dst leaf switch
+    if (congaInfo.has_congestion_info == true
+        && congaInfo.dst_leaf_id == this->leaf_id) {
+        this->updateCongestionFromLeaf(
+            congaInfo.src_leaf_id, congaInfo.core_id, congaInfo.congestion_metric);
+    }
 }
 
 // Process ACK Packet
 void LeafSwitch::processAck(Packet& pkt) {
-    // TODO add congestioninfo to pkt at dst leaf switch
+    auto congaInfo = pkt.getCongaInfo();
+    //add congestioninfo to pkt at dst leaf switch
+    CongestionInfo feedback = this->selectFeedbackMetric(congaInfo.src_leaf_id);
+    pkt.setFeedbackCore(feedback.core_id);
+    pkt.setFeedbackCongestion(feedback.metric);
 
-    // TODO add congestioninfo to congestion-to-leaf at src leaf switch
+    //add congestioninfo to congestion-to-leaf at src leaf switch
+    if (this->leaf_id == congaInfo.src_leaf_id) {
+        this->updateCongestionToLeaf(congaInfo.core_id, congaInfo.congestion_metric);
+    }
 }
 
 // Update congestion from other leaf switches
@@ -75,11 +94,16 @@ void LeafSwitch::updateCongestionFromLeaf(uint32_t src_leaf, uint32_t core_id, d
     congestionFromLeafTable[src_leaf].push_back({metric, core_id, now});
 }
 
+void LeafSwitch::updateCongestionToLeaf(uint32_t core_id, double metric) {
+    congestionToLeafTable[core_id] = metric;
+}
+
 // Select feedback metric based on congestion information
-LeafSwitch::CongestionInfo LeafSwitch::selectFeedbackMetric(uint32_t dst_leaf) {
-    if (congestionFromLeafTable.find(dst_leaf) != congestionFromLeafTable.end()) {
-        const auto& congestionList = congestionFromLeafTable[dst_leaf];
+LeafSwitch::CongestionInfo LeafSwitch::selectFeedbackMetric(uint32_t src_leaf) {
+    if (congestionFromLeafTable.find(src_leaf) != congestionFromLeafTable.end()) {
+        const auto& congestionList = congestionFromLeafTable[src_leaf];
         // Select the most recent entry or implement a custom selection logic
+        // todo change to round robin
         return congestionList.back();
     }
     return {0.0, 0, 0};  // Default feedback if no data available
@@ -120,7 +144,7 @@ double LeafSwitch::calculateDRE(uint32_t core_id) {
 }
 
 double LeafSwitch::getPathCongestion(uint32_t core_id) const {
-    return congestion_to_leaf.metric;
+    return congestionToLeafTable.find(core_id)->second;
 }
 
 // Clean up stale entries from congestion information table

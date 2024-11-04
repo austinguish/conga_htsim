@@ -19,6 +19,8 @@ namespace conga {
         void setLeafId(uint32_t id) { leaf_id = id; }
         uint32_t getLeafId() const { return leaf_id; }
 
+        void setCoreId(uint32_t id) { core_id = id; }
+
         double measureLocalCongestion(uint32_t core_id);
 
         // override receivePacket
@@ -34,7 +36,7 @@ namespace conga {
             double metric;
             uint32_t core_id;
             simtime_picosec timestamp;
-        } congestion_to_leaf;
+        };
 
         struct QueueMetrics {
             simtime_picosec lastUpdateTime;
@@ -53,8 +55,11 @@ namespace conga {
         double calculateDRE(uint32_t core_id);
         double getPathCongestion(uint32_t core_id) const;
 
+        // core_id, metrics
+        std::map<uint32_t, double> congestionToLeafTable;
         // 存储从其他叶子收到的拥塞信息
         std::map<uint32_t, std::vector<CongestionInfo>> congestionFromLeafTable;
+
 
         // 用于反馈选择的计数器
         std::map<uint32_t, uint32_t> feedbackCounter;
@@ -65,6 +70,7 @@ namespace conga {
 
         // 更新和选择拥塞信息
         void updateCongestionFromLeaf(uint32_t src_leaf, uint32_t core_id, double metric);
+        void updateCongestionToLeaf(uint32_t core_id, double metric);
         CongestionInfo selectFeedbackMetric(uint32_t dst_leaf);
 
         // 清理过期条目

@@ -60,6 +60,8 @@ public:
         uint32_t core_id;
         uint32_t dst_leaf_id;
         double congestion_metric;
+        uint32_t feedback_core;
+        double feedback_congestion;
         bool has_congestion_info;
 
         CongaInfo() : src_leaf_id(0), core_id(0), dst_leaf_id(0),
@@ -74,6 +76,11 @@ public:
         conga_info.congestion_metric = congestion_metric;
         conga_info.has_congestion_info = true;
     }
+
+    void setFeedbackCore(uint32_t core_id) {conga_info.feedback_core = core_id;}
+    void setFeedbackCongestion(double feedback_congestion) {conga_info.feedback_congestion = feedback_congestion;}
+
+    CongaInfo getCongaInfo() const { return conga_info; }
 
 protected:
     void set(PacketFlow &flow, route_t &route, mem_b pkt_size, packetid_t id);

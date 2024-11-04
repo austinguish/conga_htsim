@@ -143,7 +143,7 @@ FlowGenerator::createFlow(uint64_t flowSize,
     // Generate a random route.
     route_t *routeFwd = NULL, *routeRev = NULL;
     TCPFlow *flow = NULL;
-    uint32_t src_node = 1, dst_node = 33;
+    uint32_t src_node = 0, dst_node = 0;
     _routeGen(routeFwd, routeRev, src_node, dst_node);
 
     // Generate next start time adding jitter.
@@ -174,8 +174,6 @@ FlowGenerator::createFlow(uint64_t flowSize,
                      // TODO: option to supply logtcp.
                      src = new TcpSrc(NULL, NULL, flowSize);
                      snk = new TcpSink();
-                     src->setLeafSwitch(_congaSwitch);
-                     src->setTCPFlow(flow);
 
                      if (_endhost == DataSource::DCTCP || _endhost == DataSource::D_DCTCP) {
                          TcpSrc::_enable_dctcp = true;

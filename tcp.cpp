@@ -146,9 +146,9 @@ TcpSrc::receivePacket(Packet &pkt)
     //          << " metric: " << p->congaFeedback.congestionMetric << endl;
     // }
 
-    if (p->hasCongaFeedback() && _myLeafSwitch) {
-        _myLeafSwitch->processCongestionFeedback(*p);
-    }
+    // if (p->hasCongaFeedback() && _myLeafSwitch) {
+    //     _myLeafSwitch->processCongestionFeedback(*p);
+    // }
 
     pkt.flow().logTraffic(pkt, *this, TrafficLogger::PKT_RCVDESTROY);
     p->free();
@@ -388,11 +388,6 @@ TcpSrc::sendPackets()
 
     while (_last_acked + _cwnd >= _highest_sent + MSS_BYTES) {
         DataPacket *p = DataPacket::newpkt(_flow, *_route_fwd, _highest_sent + 1, MSS_BYTES);
-
-        TCPFlow* tcpFlow = dynamic_cast<TCPFlow*>(&_flow);
-        if (tcpFlow) {
-            p->setCongaInfo(tcpFlow->route_info);
-        }
 
         p->flow().logTraffic(*p, *this, TrafficLogger::PKT_CREATESEND);
         p->set_ts(current_ts);

@@ -149,8 +149,8 @@ conga_testbed(const ArgList &args, Logfile &logfile) {
             // Core to Leaf direction
             Queue *coreLeafQueue;
             string name = "q-core-leaf-" + to_string(i) + "-" + to_string(j);
-            coreLeafQueue->setName(name);
             createQueue(QueueType, coreLeafQueue, CORE_SPEED, CORE_BUFFER, logfile, name);
+            coreLeafQueue->setName(name);
             qCoreLeaf[i][j] = coreLeafQueue;
             logfile.writeName(*(qCoreLeaf[i][j]));
 
@@ -161,8 +161,8 @@ conga_testbed(const ArgList &args, Logfile &logfile) {
             // Leaf to Core direction - 使用LeafSwitch
             Queue *leafCoreQueue;
             name = "q-leaf-core-" + to_string(i) + "-" + to_string(j);
-            leafCoreQueue->setName(name);
             createQueue(QueueType, leafCoreQueue, CORE_SPEED, LEAF_BUFFER, logfile, name);
+            leafCoreQueue->setName(name);
             qLeafCore[i][j] = dynamic_cast<LeafSwitch *>(leafCoreQueue); // 转换为LeafSwitch
             if (qLeafCore[i][j]) {
                 cout << "[DEBUG] Successfully created LeafSwitch for leaf-core "
@@ -181,7 +181,7 @@ conga_testbed(const ArgList &args, Logfile &logfile) {
         for (int j = 0; j < N_SERVER; j++) {
             // Leaf to Server direction
             Queue *leafServerQueue;
-            string name = "q-server-" + to_string(i) + "-" + to_string(j);
+            string name = "q-leaf-server-" + to_string(i) + "-" + to_string(j);
             leafServerQueue->setName(name);
             createQueue(QueueType, leafServerQueue, LEAF_SPEED, LEAF_BUFFER, logfile, name);
             qLeafServer[i][j] = dynamic_cast<LeafSwitch *>(leafServerQueue);

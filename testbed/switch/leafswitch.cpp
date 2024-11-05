@@ -149,7 +149,6 @@ double LeafSwitch::measureLocalCongestion(uint32_t core_id) {
     double localDRE = calculateDRE(core_id);
     double remoteCongestion = getPathCongestion(core_id);
 
-    // std::cout<< "core_id" << core_id <<" localDRE: " << localDRE << " remoteDRE: " << remoteCongestion << std::endl;
     double pathCongestion = std::max(localDRE, remoteCongestion);
 
     return pathCongestion;

@@ -58,13 +58,13 @@ namespace conga {
         double getPathCongestion(uint32_t core_id) const;
 
         // core_id, metrics
-        std::map<uint32_t, double> congestionToLeafTable;
+        std::unordered_map<uint32_t, double> congestionToLeafTable;
         // 存储从其他叶子收到的拥塞信息
-        std::map<uint32_t, std::vector<CongestionInfo>> congestionFromLeafTable;
+        std::unordered_map<uint32_t, std::vector<CongestionInfo>> congestionFromLeafTable;
 
 
         // 用于反馈选择的计数器
-        std::map<uint32_t, uint32_t> feedbackCounter;
+        std::unordered_map<uint32_t, uint32_t> feedbackCounter;
 
         // 处理不同类型的数据包
         void processDataPacket(Packet& pkt);

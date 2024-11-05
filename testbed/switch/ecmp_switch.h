@@ -59,7 +59,7 @@ namespace conga {
             uint32_t dst_server = dst % N_SERVER;
 
             uint32_t core_switch = selectCorePath(flow);
-            printf("select core switch %d\n", core_switch);
+            //printf("select core switch %d\n", core_switch);
             fwd = new route_t();
             rev = new route_t();
 

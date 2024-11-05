@@ -41,6 +41,8 @@ namespace conga {
 
     // Modified route generation function that uses ECMP switch
     void generateCongaRoute(route_t *&fwd, route_t *&rev, uint32_t &src, uint32_t &dst) {
+        // measure the select route time
+        auto now = EventList::Get().now();
         const int TOTAL_SERVERS = N_LEAF * N_SERVER;
 
         // Generate random source and destination if not specified
@@ -149,15 +151,25 @@ namespace conga {
 
         rev->push_back(qLeafServer[src_leaf][src_server]); // LeafSwitch
         rev->push_back(pServerLeaf[src_leaf][src_server]);
+
+        // measure the select route time
+        auto end = EventList::Get().now();
+        auto duration = end - now;
+        std::cout << "[DEBUG-ROUTE] Route selection took " << timeAsMs(duration) << " ms" << std::endl;
+
     }
 
     void generateECMPRoute(route_t *&fwd, route_t *&rev, uint32_t &src, uint32_t &dst) {
+        auto now = EventList::Get().now();
         // Create a TCPFlow object with the source and destination IPs
         TCPFlow flow;
         flow.src_ip = src;
         flow.dst_ip = dst;
         // Use ECMP switch to generate routes
         ecmpSwitch.generateECMPRoute(fwd, rev, flow);
+        auto end = EventList::Get().now();
+        auto duration = end - now;
+        std::cout << "[DEBUG-ROUTE] Route selection took " << timeAsMs(duration) << " ms" << std::endl;
     }
 
     void generateRandomRoute(route_t *&fwd, route_t *&rev, uint32_t &src, uint32_t &dst);

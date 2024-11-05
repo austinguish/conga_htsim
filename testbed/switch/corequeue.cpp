@@ -60,11 +60,13 @@ void CoreQueue::updateCongestion(Packet& pkt) {
 
     // Calculate queue utilization using available queue info
     double queueUtilization = (this->_queuesize * 1.0) / this->_maxsize;
+    // std::cout << "core" << core_id << " queuesize" << this->_queuesize << std::endl;
 
     dre_map[congaInfo.src_leaf_id] = queueUtilization;
 
     // Update metrics
     auto local_cmp = std::max(queueUtilization, congaInfo.congestion_metric);
+    // std::cout << "core " << core_id << " downlink congestion: " << queueUtilization << std::endl;
     pkt.setCongaInfo(congaInfo.src_leaf_id, congaInfo.core_id, congaInfo.dst_leaf_id, local_cmp);
 
     return;

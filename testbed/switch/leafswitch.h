@@ -11,6 +11,7 @@
 
 namespace conga {
 
+
     class LeafSwitch : public Queue {
     public:
         LeafSwitch(linkspeed_bps bitrate, mem_b maxsize, QueueLogger* logger)

@@ -2,7 +2,6 @@
  * Simulator eventlist
  */
 #include "eventlist.h"
-
 using namespace std;
 
 EventList *EventList::instance = NULL;

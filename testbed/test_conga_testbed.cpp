@@ -13,6 +13,8 @@
 #include<functional>
 #include"switch/ecmp_switch.h"
 #include "switch/leafswitch.h"
+#include "switch/constants.h"
+#include"switch/statistics.h"
 
 
 namespace conga {
@@ -87,6 +89,9 @@ namespace conga {
             //         << " selecting core " << core_switch
             //         << " with congestion " << minCongestion << std::endl;
         }
+
+        //todo test
+        std::cout<<"conga chose core switch "<<core_switch<<std::endl;
 
         if (src_leaf != dst_leaf) {
             // 源叶子到核心

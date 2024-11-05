@@ -8,6 +8,7 @@
 #include "../pipe.h"
 #include "tcp_flow.h"
 #include "constants.h"
+#include"statistics.h"
 namespace conga {
 
 // Forward declarations of external network configuration
@@ -18,7 +19,8 @@ namespace conga {
     extern Pipe *pLeafServer[N_LEAF][N_SERVER];
     extern LeafSwitch *qLeafServer[N_LEAF][N_SERVER];
     extern Pipe *pServerLeaf[N_LEAF][N_SERVER];
-    extern Queue *qServerLeaf[N_LEAF][N_SERVER];;
+    extern Queue *qServerLeaf[N_LEAF][N_SERVER];
+
 
     class ECMPSwitch {
     private:
@@ -59,6 +61,8 @@ namespace conga {
             uint32_t dst_server = dst % N_SERVER;
 
             uint32_t core_switch = selectCorePath(flow);
+            std::cout<<"ecmp chose core switch "<<core_switch<<std::endl;
+
             //printf("select core switch %d\n", core_switch);
             fwd = new route_t();
             rev = new route_t();

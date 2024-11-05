@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Set compiler flags
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -O3")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -ggdb3 -O0")
 endif()
 
 # Create directories if they don't exist
@@ -28,7 +28,8 @@ add_executable(${PROJECT_NAME}
         testbed/switch/ecmp_switch.h
         testbed/switch/constants.h
         testbed/switch/leafswitch.cpp
-        testbed/switch/leafswitch.h  # 添加testbed源文件
+        testbed/switch/leafswitch.h
+        testbed/switch/statistics.h  # 添加testbed源文件
 )
 
 # Include directories

@@ -6,7 +6,7 @@
 #define HTSIM_CONSTANTS_H
 
 namespace conga {
-    const int N_CORE = 20; // Core(Spine) switches
+    const int N_CORE = 2; // Core(Spine) switches
     const int N_LEAF = 24; // Leaf switches
     const int N_SERVER = 32;
     // implement a hash function for TCPFlow
@@ -32,5 +32,9 @@ namespace conga {
 
     // Flow size thresholds (in bytes)
     const uint32_t SMALL_FLOW_THRESHOLD = 100 * 1024;  // 100KB
+
+
+
+
 }
 #endif //HTSIM_CONSTANTS_H

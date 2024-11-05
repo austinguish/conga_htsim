@@ -159,11 +159,11 @@ double LeafSwitch::calculateDRE(uint32_t core_id) {
 
     Queue* uplinkQueue = this;
     auto now = EventList::Get().now();
-
-    // Only update at intervals
-    if (now - metrics_.lastUpdateTime < UPDATE_INTERVAL) {
-        return metrics_.currentDRE;
-    }
+    //
+    // // Only update at intervals
+    // if (now - metrics_.lastUpdateTime < UPDATE_INTERVAL) {
+    //     return metrics_.currentDRE;
+    // }
 
     // Calculate queue utilization using available queue info
     double queueUtilization = static_cast<double>(this->_queuesize) /

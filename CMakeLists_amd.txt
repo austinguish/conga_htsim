@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 
 # Set the C++ compiler before the project declaration
-set(CMAKE_CXX_COMPILER /opt/rocm-6.2.1/bin/amdclang++)
+set(CMAKE_CXX_COMPILER /usr/bin/clang++-18)
+set(CMAKE_C_COMPILER /usr/bin/clang-18)
 
 project(htsim)
 
@@ -33,7 +34,9 @@ add_executable(${PROJECT_NAME}
         testbed/switch/constants.h
         testbed/switch/leafswitch.cpp
         testbed/switch/leafswitch.h
-)
+        testbed/switch/corequeue.cpp
+ testbed/switch/corequeue.h
+ )
 
 # Include directories
 target_include_directories(${PROJECT_NAME} PRIVATE

@@ -27,7 +27,7 @@ namespace conga {
     LeafSwitch *qLeafServer[N_LEAF][N_SERVER]; // Leaf to Server queues
 
     Pipe *pServerLeaf[N_LEAF][N_SERVER]; // Server to Leaf pipes
-    LeafSwitch *qServerLeaf[N_LEAF][N_SERVER]; // Server to Leaf queues
+    Queue *qServerLeaf[N_LEAF][N_SERVER]; // Server to Leaf queues
 
     // Helper functions
     ECMPSwitch ecmpSwitch;
@@ -88,8 +88,6 @@ namespace conga {
             //         << " with congestion " << minCongestion << std::endl;
         }
 
-        qServerLeaf[src_leaf][src_server]->setDstLeafId(dst_leaf); // 源服务器到叶子
-
         if (src_leaf != dst_leaf) {
             // 源叶子到核心
             qLeafCore[core_switch][src_leaf]->setDstLeafId(dst_leaf);
@@ -101,8 +99,6 @@ namespace conga {
         }
 
         // 反向路径
-        qServerLeaf[dst_leaf][dst_server]->setDstLeafId(src_leaf); // 目标服务器到叶子
-
         if (src_leaf != dst_leaf) {
             // 目标叶子到核心
             qLeafCore[core_switch][dst_leaf]->setDstLeafId(src_leaf);
@@ -235,8 +231,8 @@ conga_testbed(const ArgList &args, Logfile &logfile) {
             // Leaf to Server direction
             Queue *leafServerQueue;
             string name = "q-leaf-server-" + to_string(i) + "-" + to_string(j);
-            leafServerQueue->setName(name);
             createQueue(QueueType, leafServerQueue, LEAF_SPEED, LEAF_BUFFER, logfile, name);
+            leafServerQueue->setName(name);
             qLeafServer[i][j] = dynamic_cast<LeafSwitch *>(leafServerQueue);
             // if (qLeafServer[i][j]) {
             //     cout << "[DEBUG] Successfully created LeafSwitch for leaf-server "
@@ -251,13 +247,9 @@ conga_testbed(const ArgList &args, Logfile &logfile) {
             // Server to Leaf direction
             Queue *serverLeafQueue;
             name = "q-server-leaf-" + to_string(i) + "-" + to_string(j);
-            serverLeafQueue->setName(name);
             createQueue(QueueType, serverLeafQueue, LEAF_SPEED, ENDH_BUFFER, logfile, name);
-            qServerLeaf[i][j] = dynamic_cast<LeafSwitch *>(serverLeafQueue);
-            // if (qServerLeaf[i][j]) {
-            //     cout << "[DEBUG] Successfully created LeafSwitch for server-leaf "
-            //             << i << "-" << j << endl;
-            // }
+            serverLeafQueue->setName(name);
+            qServerLeaf[i][j] = serverLeafQueue;
             logfile.writeName(*(qServerLeaf[i][j]));
 
             pServerLeaf[i][j] = new Pipe(timeFromUs(LINK_DELAY));
@@ -371,7 +363,6 @@ void conga::createQueue(std::string &qType, Queue *&queue, uint64_t speed, uint6
 
     // 解析队列名称
     bool isLeafQueue = (name.find("leaf-server") != string::npos ||
-                        name.find("server-leaf") != string::npos ||
                         name.find("leaf-core") != string::npos);
 
     if (!isLeafQueue) {
@@ -408,10 +399,6 @@ void conga::createQueue(std::string &qType, Queue *&queue, uint64_t speed, uint6
         leafSwitch->setCoreId(core_id);
     } else if (name.find("leaf-server") != string::npos) {
         // q-leaf-server-[leaf_id]-[server_id]
-        leaf_id = stoi(name.substr(secondLastDash + 1, lastDash - secondLastDash - 1));
-        leafSwitch->setLeafId(leaf_id);
-    } else if (name.find("server-leaf") != string::npos) {
-        // q-server-leaf-[leaf_id]-[server_id]
         leaf_id = stoi(name.substr(secondLastDash + 1, lastDash - secondLastDash - 1));
         leafSwitch->setLeafId(leaf_id);
     }

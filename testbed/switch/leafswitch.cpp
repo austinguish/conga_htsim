@@ -186,7 +186,6 @@ double LeafSwitch::getPathCongestion(uint32_t core_id) const {
     // std::cout << "[DEBUG-CONGESTION] Leaf " << leaf_id
     //              << " getting path congestion for core " << core_id
     //              << ": " << it->second << std::endl;
-
     return (it != congestionToLeafTable.end()) ? it->second : 0.0;
 }
 

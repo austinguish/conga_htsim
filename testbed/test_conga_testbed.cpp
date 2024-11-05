@@ -161,7 +161,7 @@ namespace conga {
         // measure the select route time
         auto end = EventList::Get().now();
         auto duration = end - now;
-        std::cout << "[DEBUG-ROUTE] Route selection took " << timeAsMs(duration) << " ms" << std::endl;
+        // std::cout << "[DEBUG-ROUTE] Route selection took " << timeAsMs(duration) << " ms" << std::endl;
 
     }
 

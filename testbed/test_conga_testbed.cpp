@@ -14,13 +14,14 @@
 #include"switch/ecmp_switch.h"
 #include "switch/leafswitch.h"
 #include "switch/constants.h"
+#include "switch/corequeue.h"
 #include"switch/statistics.h"
 
 
 namespace conga {
     // Network components
     Pipe *pCoreLeaf[N_CORE][N_LEAF]; // Core to Leaf pipes
-    Queue *qCoreLeaf[N_CORE][N_LEAF]; // Core to Leaf queues
+    CoreQueue *qCoreLeaf[N_CORE][N_LEAF]; // Core to Leaf queues
 
     Pipe *pLeafCore[N_CORE][N_LEAF]; // Leaf to Core pipes
     LeafSwitch *qLeafCore[N_CORE][N_LEAF]; // Leaf to Core queues
@@ -217,7 +218,7 @@ conga_testbed(const ArgList &args, Logfile &logfile) {
             string name = "q-core-leaf-" + to_string(i) + "-" + to_string(j);
             createQueue(QueueType, coreLeafQueue, CORE_SPEED, CORE_BUFFER, logfile, name);
             coreLeafQueue->setName(name);
-            qCoreLeaf[i][j] = coreLeafQueue;
+            qCoreLeaf[i][j] =  dynamic_cast<CoreQueue *>(coreLeafQueue);
             logfile.writeName(*(qCoreLeaf[i][j]));
 
             pCoreLeaf[i][j] = new Pipe(timeFromUs(LINK_DELAY));
@@ -381,6 +382,19 @@ void conga::createQueue(std::string &qType, Queue *&queue, uint64_t speed, uint6
     // 解析队列名称
     bool isLeafQueue = (name.find("leaf-server") != string::npos ||
                         name.find("leaf-core") != string::npos);
+    bool isCoreQueue = (name.find("core-leaf") != string::npos);
+
+    if (isCoreQueue) {
+        size_t lastDash = name.find_last_of('-');
+        size_t secondLastDash = name.find_last_of('-', lastDash - 1);
+        size_t firstDash = name.find_first_of('-');
+        uint32_t core_id = 0;
+        core_id = stoi(name.substr(secondLastDash + 1, lastDash - secondLastDash - 1));
+        CoreQueue *corequeue = new CoreQueue(speed, buffer, qs);
+        corequeue->core_id = core_id;
+        queue = corequeue;
+        return;
+    }
 
     if (!isLeafQueue) {
         // 核心交换机队列使用原有逻辑

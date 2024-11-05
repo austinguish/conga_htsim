@@ -29,7 +29,9 @@ add_executable(${PROJECT_NAME}
         testbed/switch/constants.h
         testbed/switch/leafswitch.cpp
         testbed/switch/leafswitch.h
-        testbed/switch/statistics.h  # 添加testbed源文件
+        testbed/switch/statistics.h
+        testbed/switch/corequeue.h  # 添加testbed源文件
+        testbed/switch/corequeue.cpp
 )
 
 # Include directories

@@ -8,12 +8,13 @@
 #include "../pipe.h"
 #include "tcp_flow.h"
 #include "constants.h"
+#include "corequeue.h"
 #include"statistics.h"
 namespace conga {
 
 // Forward declarations of external network configuration
     extern Pipe *pCoreLeaf[N_CORE][N_LEAF];
-    extern Queue *qCoreLeaf[N_CORE][N_LEAF];
+    extern CoreQueue *qCoreLeaf[N_CORE][N_LEAF];
     extern Pipe *pLeafCore[N_CORE][N_LEAF];
     extern LeafSwitch *qLeafCore[N_CORE][N_LEAF];
     extern Pipe *pLeafServer[N_LEAF][N_SERVER];
@@ -36,8 +37,8 @@ namespace conga {
         ECMPSwitch() : gen(rd()) {}
 
         uint32_t selectCorePath(const TCPFlow& flow) {
-            uint32_t hash = flowHash(flow);
-            return hash % N_CORE;
+            // uint32_t hash = flowHash(flow);
+            return (flow.src_ip ^ flow.dst_ip) % N_CORE;
         }
 
         void generateECMPRoute(route_t*& fwd, route_t*& rev, TCPFlow& flow) {

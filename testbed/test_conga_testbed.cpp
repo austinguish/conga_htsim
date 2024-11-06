@@ -221,6 +221,7 @@ conga_testbed(const ArgList &args, Logfile &logfile) {
     parseString(args, "flowgen", FlowGen);
     parseInt(args, "load", Load);
     parseDouble(args,"alpha",ALPHA);
+    std::cout<<"set alpha "<<ALPHA<<std::endl;
 
     Utilization = Load / 100.0;
 

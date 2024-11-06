@@ -15,6 +15,8 @@
 #include "switch/leafswitch.h"
 #include "switch/constants.h"
 #include "switch/corequeue.h"
+#include <random>
+#include <chrono>
 #include"switch/statistics.h"
 
 
@@ -41,7 +43,13 @@ namespace conga {
         std::hash<TCPFlow> hasher;
         return static_cast<uint32_t>(hasher(flow));
     }
+    static std::mt19937 rng(std::chrono::steady_clock::now().time_since_epoch().count());
 
+    // Helper function to generate random numbers in a range
+    inline uint32_t getRandomInRange(uint32_t min, uint32_t max) {
+        std::uniform_int_distribution<uint32_t> dist(min, max);
+        return dist(rng);
+    }
     // Modified route generation function that uses ECMP switch
     void generateCongaRoute(route_t *&fwd, route_t *&rev, uint32_t &src, uint32_t &dst) {
         // measure the select route time
@@ -50,12 +58,13 @@ namespace conga {
 
         // Generate random source and destination if not specified
         if (src == 0) {
-            src = rand() % TOTAL_SERVERS;
+            src = getRandomInRange(0, TOTAL_SERVERS - 1);
         } else {
             src = src % TOTAL_SERVERS;
         }
-        if (dst == 0) { dst = rand() % (TOTAL_SERVERS - 1); }
-        else {
+        if (dst == 0) {
+            dst = getRandomInRange(0, TOTAL_SERVERS - 2);
+        } else {
             dst = dst % (TOTAL_SERVERS - 1);
         }
         if (dst >= src) dst++;

@@ -182,6 +182,7 @@ namespace conga {
     }
 
     void generateECMPRoute(route_t *&fwd, route_t *&rev, uint32_t &src, uint32_t &dst) {
+        auto now = EventList::Get().now();
         // Create a TCPFlow object with the source and destination IPs
         TCPFlow flow;
         flow.src_ip = src;
@@ -189,6 +190,8 @@ namespace conga {
         // Use ECMP switch to generate routes
         ecmpSwitch.generateECMPRoute(fwd, rev, flow);
         auto end = EventList::Get().now();
+        auto duration = end - now;
+        std::cout << "[DEBUG-ROUTE] Route selection took " << timeAsMs(duration) << " ms" << std::endl;
     }
 
     void generateRandomRoute(route_t *&fwd, route_t *&rev, uint32_t &src, uint32_t &dst);
@@ -210,7 +213,7 @@ conga_testbed(const ArgList &args, Logfile &logfile) {
     string FlowDist = "uniform";
     string FlowGen = "random";
     uint32_t Load = 50;
-    conga::ALPHA = 0.1;
+
     // Parse command line arguments
     parseInt(args, "duration", Duration);
     parseInt(args, "flowsize", AvgFlowSize);
@@ -220,8 +223,6 @@ conga_testbed(const ArgList &args, Logfile &logfile) {
     parseString(args, "flowdist", FlowDist);
     parseString(args, "flowgen", FlowGen);
     parseInt(args, "load", Load);
-    parseDouble(args,"alpha",ALPHA);
-    std::cout<<"set alpha "<<ALPHA<<std::endl;
 
     Utilization = Load / 100.0;
 
@@ -319,10 +320,8 @@ conga_testbed(const ArgList &args, Logfile &logfile) {
     if (FlowGen == "random") {
         // bgFlowGen = new FlowGenerator(eh, generateRandomRoute, bg_flow_rate, AvgFlowSize, fd);
     } else if (FlowGen == "ecmp") {
-        std::cout<<"[DEBUG] Using ECMP routing for background traffic"<<std::endl;
         bgFlowGen = new FlowGenerator(eh, generateECMPRoute, bg_flow_rate, AvgFlowSize, fd);
     } else if (FlowGen == "conga") {
-        std::cout<<"[DEBUG] Using CONGA routing for background traffic"<<std::endl;
         bgFlowGen = new FlowGenerator(eh, generateCongaRoute, bg_flow_rate, AvgFlowSize, fd);
     }
 

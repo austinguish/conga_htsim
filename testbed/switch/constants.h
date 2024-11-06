@@ -33,7 +33,7 @@ namespace conga {
     // Flow size thresholds (in bytes)
     const uint32_t SMALL_FLOW_THRESHOLD = 100 * 1024;  // 100KB
 
-   double ALPHA=0.1;
+
 
 
 }

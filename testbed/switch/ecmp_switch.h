@@ -67,32 +67,30 @@ namespace conga {
             //printf("select core switch %d\n", core_switch);
             fwd = new route_t();
             rev = new route_t();
-            // put to the packet from server to leaf
+
             fwd->push_back(qServerLeaf[src_leaf][src_server]);
             fwd->push_back(pServerLeaf[src_leaf][src_server]);
-            // if the source leaf is not equal to the destination leaf
-            // put to the packet from leaf to core
+
             if (src_leaf != dst_leaf) {
                 fwd->push_back(qLeafCore[core_switch][src_leaf]);
                 fwd->push_back(pLeafCore[core_switch][src_leaf]);
                 fwd->push_back(qCoreLeaf[core_switch][dst_leaf]);
                 fwd->push_back(pCoreLeaf[core_switch][dst_leaf]);
             }
-            // put to the packet from leaf to server
+
             fwd->push_back(qLeafServer[dst_leaf][dst_server]);
             fwd->push_back(pLeafServer[dst_leaf][dst_server]);
-            // build the ack path
-            // put to the packet from server to leaf
+
             rev->push_back(qServerLeaf[dst_leaf][dst_server]);
             rev->push_back(pServerLeaf[dst_leaf][dst_server]);
-            // if the source leaf is not equal to the destination leaf
+
             if (src_leaf != dst_leaf) {
                 rev->push_back(qLeafCore[core_switch][dst_leaf]);
                 rev->push_back(pLeafCore[core_switch][dst_leaf]);
                 rev->push_back(qCoreLeaf[core_switch][src_leaf]);
                 rev->push_back(pCoreLeaf[core_switch][src_leaf]);
             }
-            // put to the packet from leaf to server
+
             rev->push_back(qLeafServer[src_leaf][src_server]);
             rev->push_back(pLeafServer[src_leaf][src_server]);
         }

@@ -49,8 +49,15 @@ namespace conga {
         const int TOTAL_SERVERS = N_LEAF * N_SERVER;
 
         // Generate random source and destination if not specified
-        if (src == 0) src = rand() % TOTAL_SERVERS;
-        if (dst == 0) dst = rand() % (TOTAL_SERVERS - 1);
+        if (src == 0) {
+            src = rand() % TOTAL_SERVERS;
+        } else {
+            src = src % TOTAL_SERVERS;
+        }
+        if (dst == 0) { dst = rand() % (TOTAL_SERVERS - 1); }
+        else {
+            dst = dst % (TOTAL_SERVERS - 1);
+        }
         if (dst >= src) dst++;
 
         // Calculate source and destination leaf switches
@@ -94,7 +101,7 @@ namespace conga {
         }
 
         //todo test
-        std::cout<<"conga chose core switch "<<core_switch<<std::endl;
+        std::cout << "conga chose core switch " << core_switch << std::endl;
 
         if (src_leaf != dst_leaf) {
             // 源叶子到核心
@@ -218,7 +225,7 @@ conga_testbed(const ArgList &args, Logfile &logfile) {
             string name = "q-core-leaf-" + to_string(i) + "-" + to_string(j);
             createQueue(QueueType, coreLeafQueue, CORE_SPEED, CORE_BUFFER, logfile, name);
             coreLeafQueue->setName(name);
-            qCoreLeaf[i][j] =  dynamic_cast<CoreQueue *>(coreLeafQueue);
+            qCoreLeaf[i][j] = dynamic_cast<CoreQueue *>(coreLeafQueue);
             logfile.writeName(*(qCoreLeaf[i][j]));
 
             pCoreLeaf[i][j] = new Pipe(timeFromUs(LINK_DELAY));
@@ -315,10 +322,10 @@ conga_testbed(const ArgList &args, Logfile &logfile) {
     EventList::Get().setEndtime(timeFromMs(Duration));
 
     cout << "Starting simulation with:\n"
-            << "Algorithm: " << FlowGen << "\n"
-            << "Workload: " << FlowDist << "\n"
-            << "Load: " << Load << "%\n"
-            << "Duration: " << Duration << "s\n";
+         << "Algorithm: " << FlowGen << "\n"
+         << "Workload: " << FlowDist << "\n"
+         << "Load: " << Load << "%\n"
+         << "Duration: " << Duration << "s\n";
 }
 
 // void

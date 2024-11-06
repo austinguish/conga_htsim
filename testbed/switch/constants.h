@@ -6,7 +6,7 @@
 #define HTSIM_CONSTANTS_H
 
 namespace conga {
-    const int N_CORE = 20; // Core(Spine) switches
+    const int N_CORE = 12; // Core(Spine) switches
     const int N_LEAF = 24; // Leaf switches
     const int N_SERVER = 32;
     // implement a hash function for TCPFlow

@@ -169,8 +169,8 @@ double LeafSwitch::calculateDRE(uint32_t core_id) {
                             static_cast<double>(this->_maxsize);
 
     // Calculate new DRE using EWMA
-    double newDRE = (QueueMetrics::ALPHA * queueUtilization) +
-                   ((1 - QueueMetrics::ALPHA) * metrics_.currentDRE);
+    double newDRE = (conga::ALPHA * queueUtilization) +
+                   ((1 - conga::ALPHA) * metrics_.currentDRE);
 
     // Update metrics
     metrics_.lastUpdateTime = now;

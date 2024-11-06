@@ -44,7 +44,7 @@ namespace conga {
         struct QueueMetrics {
             simtime_picosec lastUpdateTime;
             double currentDRE;
-            static constexpr double ALPHA = 0.1;  // EWMA smoothing factor
+            double ALPHA = 0.1;  // EWMA smoothing factor
 
             // Add constructor for proper initialization
             QueueMetrics(simtime_picosec time, double dre)
